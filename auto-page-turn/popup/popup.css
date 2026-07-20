@@ -1,0 +1,271 @@
+/* popup.css — 自动翻页扩展弹出面板样式 · 轻量白底版 */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 260px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  background: #fff;
+  color: #333;
+}
+
+.container {
+  padding: 18px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── 标题栏 ─────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0ece6;
+}
+
+.logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #f7f3ed;
+  border: 1px solid #e8e0d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #8a7e6b;
+}
+
+h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.3px;
+}
+
+/* ─── 状态栏 ─────────────────────────────── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid #f0ece6;
+  background: #faf8f5;
+  font-size: 12px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ccc;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.status-dot.active {
+  background: #7cb87c;
+  box-shadow: 0 0 0 2px rgba(124, 184, 124, 0.2);
+}
+
+.status-text {
+  color: #999;
+  font-size: 12px;
+}
+
+.status-text.active {
+  color: #5a8a5a;
+}
+
+/* ─── 主控按钮 ───────────────────────────── */
+.btn-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e0dbd4;
+  border-radius: 8px;
+  background: #faf8f5;
+  color: #555;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-main:hover {
+  background: #f5f0ea;
+  border-color: #d4cdc2;
+}
+
+.btn-main:active {
+  background: #efe9e0;
+}
+
+.btn-main.running {
+  background: #fef2f0;
+  border-color: #e8b4aa;
+  color: #c0553e;
+}
+
+.btn-main.running:hover {
+  background: #fce8e4;
+  border-color: #d9958a;
+}
+
+.btn-icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.btn-label {
+  letter-spacing: 0.3px;
+}
+
+/* ─── 控制组 ─────────────────────────────── */
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 11px;
+  color: #999;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.speed-value {
+  background: #f7f3ed;
+  border: 1px solid #e8e0d4;
+  color: #8a7e6b;
+  padding: 0 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+/* ─── 方向按钮 ───────────────────────────── */
+.direction-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.dir-btn {
+  flex: 1;
+  padding: 7px 0;
+  border: 1px solid #e8e3dc;
+  border-radius: 6px;
+  background: #fff;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dir-btn:hover {
+  background: #faf8f5;
+  color: #777;
+}
+
+.dir-btn.active {
+  background: #f7f3ed;
+  border-color: #c8bfb0;
+  color: #6b5e4c;
+  font-weight: 500;
+}
+
+/* ─── 滑块 ─────────────────────────────── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slider-hint {
+  font-size: 10px;
+  color: #bbb;
+  min-width: 14px;
+  text-align: center;
+}
+
+input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 1.5px;
+  background: #e8e3dc;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #c8bfb0;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  border-color: #8a7e6b;
+  box-shadow: 0 0 0 3px rgba(138, 126, 107, 0.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #c8bfb0;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* ─── 快捷键提示 ─────────────────────────── */
+.shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 12px;
+  border-top: 1px solid #f0ece6;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #bbb;
+}
+
+.shortcut-item kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #faf8f5;
+  border: 1px solid #e8e3dc;
+  font-family: inherit;
+  font-size: 10px;
+  color: #999;
+  line-height: 16px;
+}
+
+.shortcut-item span {
+  color: #bbb;
+}

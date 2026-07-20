@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <title>自动翻页</title>
+</head>
+<body>
+  <div class="container">
+    <!-- 标题栏 -->
+    <header class="header">
+      <div class="logo">↕</div>
+      <h1>自动翻页</h1>
+    </header>
+
+    <!-- 状态指示 -->
+    <div class="status-bar" id="statusBar">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">已停止</span>
+    </div>
+
+    <!-- 主控按钮 -->
+    <button class="btn-main" id="btnToggle">
+      <span class="btn-icon" id="btnIcon">▶</span>
+      <span class="btn-label" id="btnLabel">开始滚动</span>
+    </button>
+
+    <!-- 方向选择 -->
+    <div class="control-group">
+      <label class="control-label">滚动方向</label>
+      <div class="direction-toggle">
+        <button class="dir-btn active" id="btnDown" data-dir="down">↓ 向下</button>
+        <button class="dir-btn" id="btnUp" data-dir="up">↑ 向上</button>
+      </div>
+    </div>
+
+    <!-- 速度控制 -->
+    <div class="control-group">
+      <label class="control-label">
+        滚动速度
+        <span class="speed-value" id="speedValue">3</span>
+      </label>
+      <div class="slider-row">
+        <span class="slider-hint">慢</span>
+        <input type="range" id="speedSlider" min="1" max="10" value="3" step="1">
+        <span class="slider-hint">快</span>
+      </div>
+    </div>
+
+    <!-- 快捷键提示 -->
+    <footer class="shortcuts">
+      <div class="shortcut-item">
+        <kbd>Num 0</kbd>
+        <span>开始 / 停止</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>Num 8</kbd><kbd>Num 2</kbd>
+        <span>向上 / 向下</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>Num +</kbd><kbd>Num −</kbd>
+        <span>加速 / 减速</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
