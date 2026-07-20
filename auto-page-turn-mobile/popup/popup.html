@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="stylesheet" href="popup.css">
+  <title>Auto Scroll</title>
+</head>
+<body>
+  <div class="container">
+    <!-- Title -->
+    <header class="header">
+      <div class="logo">↕</div>
+      <h1>Auto Scroll</h1>
+    </header>
+
+    <!-- Status -->
+    <div class="status-bar" id="statusBar">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">Stopped</span>
+    </div>
+
+    <!-- Main toggle -->
+    <button class="btn-main" id="btnToggle">
+      <span class="btn-icon" id="btnIcon">▶</span>
+      <span class="btn-label" id="btnLabel">Start Scrolling</span>
+    </button>
+
+    <!-- Direction -->
+    <div class="control-group">
+      <label class="control-label">Direction</label>
+      <div class="direction-toggle">
+        <button class="dir-btn active" id="btnDown" data-dir="down">↓ Down</button>
+        <button class="dir-btn" id="btnUp" data-dir="up">↑ Up</button>
+      </div>
+    </div>
+
+    <!-- Speed -->
+    <div class="control-group">
+      <label class="control-label">
+        Speed
+        <span class="speed-value" id="speedValue">0.4</span>
+      </label>
+      <div class="slider-row">
+        <span class="slider-hint">Slow</span>
+        <input type="range" id="speedSlider" min="1" max="10" value="3" step="1">
+        <span class="slider-hint">Fast</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
