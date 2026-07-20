@@ -1,7 +1,7 @@
 /**
  * content.js — 自动翻页核心滚动逻辑
  * 注入到每个网页，负责：
- *   1. 基于 requestAnimationFrame 的平滑自动滚动（支持亚像素级慢速）
+ *   1. 基于 requestAnimationFrame 的平滑自动滚动（浮点理想位置 + 帧率无关）
  *   2. 响应来自 popup / background 的控制消息
  *   3. 在页面上显示悬浮状态指示器
  *   4. 页面级键盘快捷键监听（作为 commands API 的兜底）
@@ -12,11 +12,12 @@
 
   // ─── 状态 ───────────────────────────────────────────────────
   let isScrolling = false;
-  let speed = 0.4;         // 像素/帧 (0.1~3.0)
+  let speed = 0.4;         // 像素/帧 (0.1~3.0)，内部会转换为 px/s
   let direction = "down";  // "up" | "down"
   let smooth = true;
   let animFrameId = null;
-  let scrollAccumulator = 0; // 亚像素累积器
+  let idealScrollY = 0;    // 浮点理想滚动位置，消除整数步进抖动
+  let lastFrameTime = 0;   // 上一帧时间戳，用于帧率无关速度计算
 
   // ─── 悬浮指示器 ─────────────────────────────────────────────
   const indicator = document.createElement("div");
@@ -64,24 +65,55 @@
 
   document.documentElement.appendChild(indicator);
 
-  // ─── 滚动核心（支持亚像素） ────────────────────────────────
-  function scrollStep() {
+  // ─── 滚动核心（浮点理想位置 + 帧率无关） ────────────────────
+  // 优化说明：
+  //   旧方案用 Math.floor 累积整数像素再 scrollBy，导致帧间步进不均匀
+  //   （如速度1.4时步进模式为 1-1-2-1-1-2...），在大屏/高刷上产生明显抖动。
+  //   新方案：
+  //     1. 维护浮点 idealScrollY，每帧用 scrollTo 定位到精确位置
+  //     2. 速度按时间（px/s）而非帧数计算，60Hz/120Hz/144Hz 表现一致
+  //     3. 检测用户手动滚动，自动重新同步避免位置漂移
+  function scrollStep(timestamp) {
     if (!isScrolling) return;
 
-    // 亚像素累积：当速度 < 1 时，累积到整数再滚动
-    scrollAccumulator += speed;
-    const intDelta = Math.floor(scrollAccumulator);
-    scrollAccumulator -= intDelta;
-
-    if (intDelta > 0) {
-      const delta = direction === "down" ? intDelta : -intDelta;
-      window.scrollBy(0, delta);
+    // 首帧初始化时间戳
+    if (!lastFrameTime) {
+      lastFrameTime = timestamp;
+      animFrameId = requestAnimationFrame(scrollStep);
+      return;
     }
 
-    // 检测是否到达页面底部/顶部，自动停止
-    const atBottom = direction === "down" &&
-      window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1;
-    const atTop = direction === "up" && window.scrollY <= 0;
+    // 计算帧间隔（秒），上限 100ms 防止切标签页后大跳
+    const dt = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
+    lastFrameTime = timestamp;
+
+    // 帧率无关：speed(px/frame) × 60 = px/s，再乘以 dt 得到本帧位移
+    const delta = speed * 60 * dt;
+
+    // 检测用户手动滚动（非程序触发的 scrollY 变化）
+    const expectedDiff = idealScrollY - window.scrollY;
+    if (Math.abs(expectedDiff) > 50) {
+      // 用户大幅滚动（手动翻页、锚点跳转等），重新同步
+      idealScrollY = window.scrollY;
+    }
+
+    // 更新浮点理想位置
+    if (direction === "down") {
+      idealScrollY += delta;
+    } else {
+      idealScrollY -= delta;
+    }
+
+    // 边界钳位
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    idealScrollY = Math.max(0, Math.min(idealScrollY, maxScroll));
+
+    // scrollTo 接受浮点值，浏览器内部处理亚像素渲染
+    window.scrollTo(0, idealScrollY);
+
+    // 到达页面边界自动停止
+    const atBottom = direction === "down" && idealScrollY >= maxScroll - 1;
+    const atTop = direction === "up" && idealScrollY <= 0;
 
     if (atBottom || atTop) {
       stopScroll();
@@ -94,14 +126,15 @@
   function startScroll() {
     if (isScrolling) return;
     isScrolling = true;
-    scrollAccumulator = 0;
+    idealScrollY = window.scrollY;  // 从当前位置开始
+    lastFrameTime = 0;              // 首帧会初始化时间戳
     animFrameId = requestAnimationFrame(scrollStep);
     updateIndicator();
   }
 
   function stopScroll() {
     isScrolling = false;
-    scrollAccumulator = 0;
+    lastFrameTime = 0;
     if (animFrameId) {
       cancelAnimationFrame(animFrameId);
       animFrameId = null;
