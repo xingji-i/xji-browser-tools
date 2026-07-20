@@ -1,0 +1,57 @@
+/**
+ * AutoTranslate - 面板外部样式
+ * 仅包含浮动按钮和面板容器的基础定位样式
+ * 面板内部样式由 Shadow DOM 内的 style 标签管理
+ */
+
+/* 浮动触发按钮 */
+#autotranslate-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483646;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285F4, #1A73E8);
+  border: none;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#autotranslate-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(66, 133, 244, 0.5);
+}
+
+#autotranslate-fab:active {
+  transform: scale(0.95);
+}
+
+#autotranslate-fab.hidden {
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#autotranslate-fab svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 面板激活时隐藏 FAB */
+#autotranslate-container:not([style*="display: none"]) ~ #autotranslate-fab {
+  opacity: 0;
+  pointer-events: none;
+}

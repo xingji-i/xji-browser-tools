@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "AutoTranslate - 双语对照翻译",
+  "version": "1.0.0",
+  "description": "智能识别页面内容，DeepL驱动的中英双语段落对照翻译。支持网页、PDF、电子书阅读场景。",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://api-free.deepl.com/*",
+    "https://api.deepl.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "css": ["content/panel.css"],
+      "js": [
+        "content/extractor.js",
+        "content/translator.js",
+        "content/cache.js",
+        "content/settings.js",
+        "content/panel.js",
+        "content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "options/options.html",
+  "commands": {
+    "toggle-panel": {
+      "suggested_key": {
+        "default": "Alt+T",
+        "mac": "Alt+T"
+      },
+      "description": "切换翻译面板"
+    },
+    "translate-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "Alt+Shift+T"
+      },
+      "description": "翻译当前页面"
+    }
+  }
+}

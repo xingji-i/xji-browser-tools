@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoTranslate - 设置</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #F7FAFC;
+      color: #1A202C;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .page-header svg {
+      width: 32px;
+      height: 32px;
+      color: #4285F4;
+    }
+
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1A365D;
+    }
+
+    .page-header p {
+      font-size: 13px;
+      color: #718096;
+      margin-top: 2px;
+    }
+
+    .section {
+      background: white;
+      border: 1px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2D3748;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title svg {
+      width: 18px;
+      height: 18px;
+      color: #4285F4;
+    }
+
+    .section-desc {
+      font-size: 13px;
+      color: #718096;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #4A5568;
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #2D3748;
+      background: white;
+      transition: border-color 0.15s;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: #4285F4;
+      box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: #A0AEC0;
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #2D3748;
+      background: white;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 20 20' fill='%23718096' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+      padding-right: 36px;
+    }
+
+    .form-select:focus {
+      outline: none;
+      border-color: #4285F4;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .form-hint {
+      font-size: 12px;
+      color: #A0AEC0;
+      margin-top: 4px;
+    }
+
+    .form-hint a {
+      color: #4285F4;
+      text-decoration: none;
+    }
+
+    .form-hint a:hover {
+      text-decoration: underline;
+    }
+
+    /* Toggle switch */
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      color: #2D3748;
+    }
+
+    .toggle-desc {
+      font-size: 12px;
+      color: #A0AEC0;
+      margin-top: 2px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle input {
+      display: none;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #CBD5E0;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .toggle input:checked + .toggle-slider {
+      background: #4285F4;
+    }
+
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: #4285F4;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #3367D6;
+    }
+
+    .btn-secondary {
+      background: #EDF2F7;
+      color: #4A5568;
+    }
+
+    .btn-secondary:hover {
+      background: #E2E8F0;
+    }
+
+    .btn-danger {
+      background: #FFF5F5;
+      color: #E53E3E;
+      border: 1px solid #FED7D7;
+    }
+
+    .btn-danger:hover {
+      background: #FED7D7;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #2D3748;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success {
+      background: #276749;
+    }
+
+    .toast.error {
+      background: #C53030;
+    }
+
+    /* Radio group */
+    .radio-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .radio-option:hover {
+      border-color: #BEE3F8;
+    }
+
+    .radio-option.selected {
+      border-color: #4285F4;
+      background: #EBF8FF;
+      color: #2B6CB0;
+    }
+
+    .radio-option input {
+      display: none;
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: #E2E8F0;
+      margin: 16px 0;
+    }
+
+    /* Test section */
+    .test-area {
+      margin-top: 12px;
+    }
+
+    .test-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .test-input:focus {
+      outline: none;
+      border-color: #4285F4;
+    }
+
+    .test-result {
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: #F7FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      font-size: 14px;
+      min-height: 40px;
+      color: #2D3748;
+    }
+
+    .test-result.loading {
+      color: #718096;
+      font-style: italic;
+    }
+
+    .test-result.error {
+      background: #FFF5F5;
+      border-color: #FED7D7;
+      color: #C53030;
+    }
+
+    .test-result.success {
+      background: #F0FFF4;
+      border-color: #C6F6D5;
+    }
+
+    /* Account type selector */
+    .account-type-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .account-type-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: 2px solid #E2E8F0;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .account-type-btn:hover {
+      border-color: #BEE3F8;
+    }
+
+    .account-type-btn.active {
+      border-color: #4285F4;
+      background: #EBF8FF;
+    }
+
+    .account-type-btn .type-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: #2D3748;
+    }
+
+    .account-type-btn .type-desc {
+      font-size: 11px;
+      color: #718096;
+      margin-top: 2px;
+    }
+
+    .account-type-btn.active .type-name {
+      color: #2B6CB0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2l1 3"/>
+        <path d="M14 13l4 8 4-8M14 13h8"/>
+      </svg>
+      <div>
+        <h1>AutoTranslate 设置</h1>
+        <p>配置翻译引擎和显示选项</p>
+      </div>
+    </div>
+
+    <!-- DeepL API 配置 -->
+    <div class="section">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        DeepL API 配置
+      </div>
+      <div class="section-desc">
+        需要一个 DeepL API Key 来使用翻译功能。免费版每月可翻译 50 万字符。
+        <a href="https://www.deepl.com/pro-api" target="_blank">获取 API Key →</a>
+      </div>
+
+      <div class="account-type-group">
+        <div class="account-type-btn active" data-type="free">
+          <div class="type-name">Free</div>
+          <div class="type-desc">免费，50万字符/月</div>
+        </div>
+        <div class="account-type-btn" data-type="pro">
+          <div class="type-name">Pro</div>
+          <div class="type-desc">付费，更高限额</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">API Key</label>
+        <input type="password" class="form-input" id="api-key" placeholder="输入你的 DeepL API Key">
+        <div class="form-hint">API Key 以安全方式存储在浏览器本地</div>
+      </div>
+
+      <button class="btn btn-secondary" id="btn-test-api" style="margin-top: 8px;">
+        测试 API 连接
+      </button>
+      <div id="test-result" class="test-result" style="display:none;"></div>
+    </div>
+
+    <!-- 语言设置 -->
+    <div class="section">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        语言设置
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">源语言</label>
+          <select class="form-select" id="source-lang">
+            <option value="auto">自动检测</option>
+            <option value="ZH">中文</option>
+            <option value="EN">英语</option>
+            <option value="JA">日语</option>
+            <option value="KO">韩语</option>
+            <option value="FR">法语</option>
+            <option value="DE">德语</option>
+            <option value="ES">西班牙语</option>
+            <option value="RU">俄语</option>
+            <option value="PT">葡萄牙语</option>
+            <option value="IT">意大利语</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">目标语言</label>
+          <select class="form-select" id="target-lang">
+            <option value="ZH">中文</option>
+            <option value="EN">英语</option>
+            <option value="JA">日语</option>
+            <option value="KO">韩语</option>
+            <option value="FR">法语</option>
+            <option value="DE">德语</option>
+            <option value="ES">西班牙语</option>
+            <option value="RU">俄语</option>
+            <option value="PT">葡萄牙语</option>
+            <option value="IT">意大利语</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 显示设置 -->
+    <div class="section">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        显示设置
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">显示模式</label>
+        <div class="radio-group" id="display-mode">
+          <label class="radio-option selected">
+            <input type="radio" name="displayMode" value="bilingual" checked>
+            双语对照
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="displayMode" value="translation-only">
+            仅显示译文
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="displayMode" value="original-only">
+            仅显示原文
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">主题</label>
+        <div class="radio-group" id="theme-group">
+          <label class="radio-option selected">
+            <input type="radio" name="theme" value="auto" checked>
+            跟随系统
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="theme" value="light">
+            浅色
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="theme" value="dark">
+            深色
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">面板默认宽度</label>
+          <input type="number" class="form-input" id="panel-width" value="420" min="300" max="900">
+        </div>
+        <div class="form-group">
+          <label class="form-label">译文字号</label>
+          <input type="number" class="form-input" id="font-size" value="15" min="12" max="22">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="toggle-group">
+        <div>
+          <div class="toggle-label">悬停高亮对应段落</div>
+          <div class="toggle-desc">鼠标悬停在翻译卡片上时，高亮页面中对应的原文段落</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="highlight-hover" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-group">
+        <div>
+          <div class="toggle-label">自动翻译</div>
+          <div class="toggle-desc">打开含有文章内容的页面时自动开始翻译</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="auto-translate">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 缓存管理 -->
+    <div class="section">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        数据管理
+      </div>
+
+      <div class="usage-info" id="cache-info">
+        <span>翻译缓存: <strong id="cache-count">0</strong> 条</span>
+        <span>约 <strong id="cache-chars">0</strong> 字符</span>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="btn-export-cache">导出缓存</button>
+        <button class="btn btn-danger" id="btn-clear-cache">清除缓存</button>
+      </div>
+    </div>
+
+    <!-- 保存按钮 -->
+    <div class="btn-row" style="justify-content: flex-end;">
+      <button class="btn btn-secondary" id="btn-reset">恢复默认</button>
+      <button class="btn btn-primary" id="btn-save">保存设置</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>
