@@ -216,7 +216,7 @@
     return false;
   });
 
-  // ─── 页面级键盘快捷键（数字键盘） ───────────────────────────
+  // ─── 页面级键盘快捷键（Ctrl+Space 兜底） ──────────────────────
   document.addEventListener("keydown", (e) => {
     // 忽略输入框内的按键
     const tag = e.target.tagName;
@@ -224,42 +224,10 @@
       tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
     if (isEditable) return;
 
-    // 仅响应小键盘（event.code 区分 Numpad 和主键盘数字）
-    switch (e.code) {
-      case "Numpad0":
-        e.preventDefault();
-        toggleScroll();
-        break;
-      case "Numpad8":
-        e.preventDefault();
-        if (direction !== "up") {
-          direction = "up";
-          updateIndicator();
-          browser.storage.local.set({ scrollSettings: { speed, direction, smooth } });
-        }
-        if (!isScrolling) startScroll();
-        break;
-      case "Numpad2":
-        e.preventDefault();
-        if (direction !== "down") {
-          direction = "down";
-          updateIndicator();
-          browser.storage.local.set({ scrollSettings: { speed, direction, smooth } });
-        }
-        if (!isScrolling) startScroll();
-        break;
-      case "NumpadAdd":
-        e.preventDefault();
-        speed = Math.min(3.0, +(speed + 0.2).toFixed(1));
-        updateIndicator();
-        browser.storage.local.set({ scrollSettings: { speed, direction, smooth } });
-        break;
-      case "NumpadSubtract":
-        e.preventDefault();
-        speed = Math.max(0.1, +(speed - 0.2).toFixed(1));
-        updateIndicator();
-        browser.storage.local.set({ scrollSettings: { speed, direction, smooth } });
-        break;
+    // Ctrl+Space: 开/关自动滚动
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === "Space" || e.key === " ")) {
+      e.preventDefault();
+      toggleScroll();
     }
   });
 

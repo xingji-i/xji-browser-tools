@@ -1,8 +1,8 @@
 /**
  * background.js — 自动翻页扩展的后台服务
  * 职责：
- *   1. 处理键盘快捷键命令，转发给当前标签页的 content script
- *   2. 管理扩展状态（是否在滚动中）
+ *   1. 处理 Ctrl+Space 快捷键，转发 toggle 给当前标签页
+ *   2. 安装时初始化默认设置
  */
 
 // 兼容 Chrome 和 Firefox 的 API 命名
@@ -10,15 +10,13 @@ const browser = typeof globalThis.browser !== "undefined" ? globalThis.browser :
 
 // ─── 键盘命令处理 ────────────────────────────────────────────
 browser.commands.onCommand.addListener(async (command) => {
+  if (command !== "toggle-scroll") return;
+
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
 
   try {
-    if (command === "toggle-scroll") {
-      await browser.tabs.sendMessage(tab.id, { action: "toggle" });
-    } else if (command === "reverse-direction") {
-      await browser.tabs.sendMessage(tab.id, { action: "reverse" });
-    }
+    await browser.tabs.sendMessage(tab.id, { action: "toggle" });
   } catch (e) {
     // content script 未加载时忽略（比如 chrome:// 页面）
   }

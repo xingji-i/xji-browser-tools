@@ -16,6 +16,13 @@
     "default_title": "自动翻页"
   },
 
+  "commands": {
+    "toggle-scroll": {
+      "suggested_key": { "default": "Ctrl+Space", "mac": "MacCtrl+Space" },
+      "description": "开始 / 停止自动滚动"
+    }
+  },
+
   "background": {
     "service_worker": "background/background.js"
   },

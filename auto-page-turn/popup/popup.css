@@ -241,7 +241,7 @@ input[type="range"]::-moz-range-thumb {
 .shortcuts {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   padding-top: 12px;
   border-top: 1px solid #f0ece6;
 }
@@ -249,7 +249,7 @@ input[type="range"]::-moz-range-thumb {
 .shortcut-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-size: 10px;
   color: #bbb;
 }
@@ -261,9 +261,10 @@ input[type="range"]::-moz-range-thumb {
   background: #faf8f5;
   border: 1px solid #e8e3dc;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 9px;
   color: #999;
-  line-height: 16px;
+  line-height: 15px;
+  white-space: nowrap;
 }
 
 .shortcut-item span {
