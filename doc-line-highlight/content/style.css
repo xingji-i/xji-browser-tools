@@ -1,0 +1,33 @@
+/* Doc Line Highlight - 高亮样式 */
+
+.dlh-highlight {
+  background-color: var(--dlh-bg, #fff3b0) !important;
+  outline: 2px solid var(--dlh-outline, #ffb300) !important;
+  outline-offset: 2px;
+  border-radius: 3px;
+  transition: background-color 0.15s ease, outline-color 0.15s ease;
+}
+
+/* 过渡动画：高亮切换时的淡入效果 */
+.dlh-highlight {
+  animation: dlh-fadein 0.2s ease-out;
+}
+
+@keyframes dlh-fadein {
+  from {
+    background-color: transparent;
+    outline-color: transparent;
+  }
+}
+
+/* 确保高亮行内的代码块也带背景 */
+.dlh-highlight code,
+.dlh-highlight pre {
+  background-color: var(--dlh-bg, #fff3b0) !important;
+}
+
+/* 在 PDF.js 文本层中微调样式 */
+.textLayer .dlh-highlight {
+  outline-offset: 0;
+  border-radius: 1px;
+}
