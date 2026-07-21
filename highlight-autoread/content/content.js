@@ -1,6 +1,10 @@
 /**
- * Highlight AutoRead - Content Script
- * 合并：逐行高亮引擎 + 自动跟读引擎
+ * Highlight AutoRead - Content Script v2
+ *
+ * 修复要点:
+ * 1. 智能主体内容检测 — 通过评分算法区分正文与导航/侧栏/页脚
+ * 2. 滚动引擎重写 — rAF 位置对比替代 scroll 事件监听，杜绝误中断
+ * 3. 滚动兼容 — scrollIntoView 失败时回退到手动计算滚动位置
  */
 (function () {
   'use strict';
@@ -9,14 +13,15 @@
   const api = globalThis.browser || chrome;
 
   /* ===== 配置 ===== */
-  // 速度档位 → 每行停留秒数映射（非线性）
+  // 速度档位 → 每行停留秒数映射（非线性，1=最慢 10=最快）
   const SPEED_MAP = [8, 6, 5, 4, 3, 2.5, 2, 1.5, 1.2, 0.8];
 
+  // 行级文本元素选择器（用于在已确定的主体区域内收集行）
   const LINE_SELECTORS = [
     // PDF.js
     '.textLayer span',
     '.pdfViewer .text-item',
-    // GitHub 代码
+    // GitHub 代码视图
     '.js-file-line',
     '.blob-code-inner',
     // Markdown 渲染
@@ -31,12 +36,17 @@
     'main p', 'main li',
     '.post-content p', '.post-content li',
     '.article-content p', '.article-content li',
+    '.entry-content p', '.entry-content li',
     // 代码块
     'pre code .code-line',
-    // 兜底
+    // 兜底（仅在无主体区域时使用）
     'p', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     'blockquote', 'td', 'dt', 'dd'
   ];
+
+  // 内容型标签 — 统计它们在容器内的数量来评分
+  const CONTENT_CHILD_SELECTOR =
+    'p, h1, h2, h3, h4, h5, h6, li, blockquote, dt, dd, td, pre';
 
   /* ===== 状态 ===== */
   let lines = [];
@@ -58,27 +68,153 @@
   let savedText = '';
   let savedUrl = '';
 
-  // 滚动同步防抖
-  let _ignoreScroll = false;
+  // 程序滚动标记（替代旧的时间戳防抖）
+  let _programScroll = false;
+  let _lastScrollY = 0;
 
-  /* ===== 行收集 ===== */
+  // 主体内容缓存
+  let _cachedRoot = null;
+  let _cachedRootUrl = '';
+
+  /* =============================================================
+   * 智能主体内容检测
+   * 原理：为页面上的容器元素打分，得分最高者视为正文区域。
+   * 评分维度：内容子元素数量、纯文本长度、语义标签加分。
+   * ============================================================= */
+
+  function detectContentRoot() {
+    // URL 变化时清除缓存
+    if (_cachedRoot && _cachedRootUrl === location.href &&
+        document.body.contains(_cachedRoot)) {
+      return _cachedRoot;
+    }
+
+    // 1. 语义标签快速匹配
+    const semanticSelectors = [
+      'article',
+      'main',
+      '[role="main"]',
+      '.post-content',
+      '.article-content',
+      '.entry-content',
+      '.markdown-body',
+      '.post-body',
+      '.article-body',
+      '.content-body',
+      '.blog-post',
+      '.reader-content'
+    ];
+
+    for (const sel of semanticSelectors) {
+      const el = document.querySelector(sel);
+      if (el && el.textContent.trim().length > 100) {
+        _cachedRoot = el;
+        _cachedRootUrl = location.href;
+        return el;
+      }
+    }
+
+    // 2. 候选容器收集：从每个文本元素向上查找父容器
+    const textEls = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
+    const scoreMap = new Map();
+
+    const MAX_WALK = Math.min(textEls.length, 80);
+    for (let i = 0; i < MAX_WALK; i++) {
+      let el = textEls[i].parentElement;
+      let depth = 0;
+      while (el && el !== document.body && depth < 6) {
+        if (el.tagName === 'HTML') break;
+        if (!scoreMap.has(el)) scoreMap.set(el, 0);
+        scoreMap.set(el, scoreMap.get(el) + 1);
+        el = el.parentElement;
+        depth++;
+      }
+    }
+
+    // 3. 过滤非内容区域（nav/aside/footer/ad）
+    const ncSelector = 'nav, aside, footer, [role="navigation"], [role="complementary"], [role="banner"], [role="contentinfo"]';
+    const nonContentSet = new Set(document.querySelectorAll(ncSelector));
+
+    for (const candidate of [...scoreMap.keys()]) {
+      if (nonContentSet.has(candidate)) {
+        scoreMap.delete(candidate);
+        continue;
+      }
+      // class/id 包含广告/侧栏关键词
+      const cls = ' ' + (candidate.className || '') + ' ';
+      const id = candidate.id || '';
+      if (cls.includes(' sidebar ') || cls.includes(' nav ') ||
+          cls.includes(' menu ') || cls.includes(' ad-') || cls.includes(' footer ') ||
+          cls.includes(' comment') || cls.includes(' cookie') ||
+          id.includes('sidebar') || id.includes('nav') || id.includes('ad') ||
+          id.includes('footer') || id.includes('comment')) {
+        scoreMap.delete(candidate);
+      }
+    }
+
+    // 4. 精细评分：内容密度 × 文本长度 + 语义标签加分
+    const candidates = [...scoreMap.entries()].filter(([, v]) => v >= 3);
+    // 限制评分数量
+    const toScore = candidates.slice(0, 60);
+
+    const scored = toScore.map(([el]) => {
+      let score = 0;
+
+      // 内容子元素数量
+      const contentChildren = el.querySelectorAll(CONTENT_CHILD_SELECTOR);
+      score += contentChildren.length * 3;
+
+      // 纯文本长度（对数刻度，避免超长内容垄断）
+      const textLen = el.textContent.trim().length;
+      score += Math.min(Math.log10(Math.max(textLen, 1)) * 6, 25);
+
+      // 语义标签加分
+      const tag = el.tagName.toLowerCase();
+      if (tag === 'article') score += 30;
+      else if (tag === 'main') score += 25;
+      else if (tag === 'section') score += 5;
+
+      if (el.getAttribute('role') === 'main') score += 30;
+
+      return { el, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    if (scored.length > 0 && scored[0].score > 5) {
+      _cachedRoot = scored[0].el;
+      _cachedRootUrl = location.href;
+      return _cachedRoot;
+    }
+
+    // 5. 回退：使用 body
+    _cachedRoot = document.body;
+    _cachedRootUrl = location.href;
+    return document.body;
+  }
+
+  /* ===== 行收集（限定在主体内容区域内） ===== */
   function collectLines() {
+    const root = detectContentRoot();
     const selector = LINE_SELECTORS.join(',');
-    const raw = document.querySelectorAll(selector);
+    const raw = root.querySelectorAll(selector);
     const seen = new Set();
     const arr = [];
 
     for (const el of raw) {
       if (seen.has(el)) continue;
       seen.add(el);
+
       // 过滤不可见
       const cs = getComputedStyle(el);
       if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+
       // 过滤空内容
-      if (settings.skipEmpty) {
-        const t = el.textContent.trim();
-        if (!t) continue;
-      }
+      if (settings.skipEmpty && !el.textContent.trim()) continue;
+
+      // 过滤极短内容（<3字符，通常是装饰性符号）
+      if (el.textContent.trim().length < 3 && el.tagName !== 'PRE') continue;
+
       arr.push(el);
     }
 
@@ -90,7 +226,7 @@
       return 0;
     });
 
-    // 父子去重：如果父已在列表中，移除子
+    // 父子去重
     const filtered = [];
     for (const el of arr) {
       let dominated = false;
@@ -104,6 +240,40 @@
     }
 
     return filtered;
+  }
+
+  /* =============================================================
+   * 滚动引擎
+   * ============================================================= */
+
+  /**
+   * 滚动到指定元素，兼容嵌套滚动容器。
+   * 优先尝试 scrollIntoView，失败时回退到手动计算。
+   */
+  function scrollToElement(el) {
+    // 方式1：原生 scrollIntoView
+    try {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (e) {
+      // ignore
+    }
+
+    // 方式2：检查元素是否真的进入了视口，如果不在则手动滚动
+    // 用 rAF 延迟一帧等待 smooth scroll 启动
+    requestAnimationFrame(() => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // 如果元素已经在视口内（top > -50 且 bottom < vh+50），无需额外操作
+      if (rect.top > -50 && rect.bottom < vh + 50) return;
+
+      // 手动计算绝对位置并滚动
+      const top = rect.top + window.scrollY;
+      const targetY = top - vh / 2 + rect.height / 2;
+      window.scrollTo({
+        top: Math.max(0, targetY),
+        behavior: 'smooth'
+      });
+    });
   }
 
   /* ===== 高亮引擎 ===== */
@@ -124,9 +294,10 @@
     el.style.setProperty('--har-outline', settings.outlineColor);
 
     if (settings.autoScroll) {
-      _ignoreScroll = true;
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setTimeout(() => { _ignoreScroll = false; }, 600);
+      _programScroll = true;
+      scrollToElement(el);
+      // 等 smooth scroll 动画结束再解除标记（通常 800-1200ms）
+      setTimeout(() => { _programScroll = false; }, 1200);
     }
   }
 
@@ -146,14 +317,12 @@
     if (highlightActive) {
       applyHighlight(currentIndex);
     }
-    // 每 15 次导航刷新一次行列表（应对 SPA 动态内容）
     if (refresh && currentIndex % 15 === 0) {
       refreshLines();
     }
   }
 
   function refreshLines() {
-    const oldLen = lines.length;
     lines = collectLines();
     if (currentIndex >= lines.length) {
       currentIndex = Math.max(0, lines.length - 1);
@@ -165,7 +334,9 @@
     if (!highlightActive) {
       toggleHighlight(true);
     }
+    if (lines.length === 0) return;
     autoReading = true;
+    _lastScrollY = window.scrollY;
     scheduleNext();
     updateIndicator();
   }
@@ -185,9 +356,9 @@
       if (!autoReading) return;
       if (currentIndex < lines.length - 1) {
         goToLine(currentIndex + 1, true);
+        _lastScrollY = window.scrollY;
         scheduleNext();
       } else {
-        // 到达末尾，自动停止
         stopAutoRead();
       }
     }, dwellSeconds * 1000);
@@ -199,12 +370,16 @@
 
     if (shouldActivate) {
       highlightActive = true;
+      _cachedRoot = null; // 重新检测主体内容
       lines = collectLines();
-      if (lines.length === 0) return;
+      if (lines.length === 0) {
+        highlightActive = false;
+        updateIndicator();
+        return;
+      }
 
       // 位置恢复
       if (savedUrl === location.href && savedIndex >= 0) {
-        // 先按文本匹配
         const savedSnippet = savedText.slice(0, 80);
         let found = -1;
         for (let i = 0; i < lines.length; i++) {
@@ -213,10 +388,7 @@
             break;
           }
         }
-        // 再按索引回退
-        if (found === -1 && savedIndex < lines.length) {
-          found = savedIndex;
-        }
+        if (found === -1 && savedIndex < lines.length) found = savedIndex;
         currentIndex = found >= 0 ? found : 0;
       } else {
         currentIndex = 0;
@@ -225,7 +397,6 @@
       applyHighlight(currentIndex);
       savedUrl = location.href;
     } else {
-      // 关闭时保存位置
       if (currentIndex >= 0 && currentIndex < lines.length) {
         savedIndex = currentIndex;
         savedText = lines[currentIndex].textContent.trim();
@@ -258,8 +429,10 @@
     if (currentIndex < lines.length - 1) {
       goToLine(currentIndex + 1, true);
     }
-    // 若自动跟读中，重置计时器
-    if (autoReading) scheduleNext();
+    if (autoReading) {
+      _lastScrollY = window.scrollY;
+      scheduleNext();
+    }
   }
 
   function prevLine() {
@@ -270,27 +443,40 @@
     if (currentIndex > 0) {
       goToLine(currentIndex - 1, false);
     }
-    if (autoReading) scheduleNext();
+    if (autoReading) {
+      _lastScrollY = window.scrollY;
+      scheduleNext();
+    }
   }
 
-  /* ===== 手动滚动检测 ===== */
-  let scrollSyncTimer = null;
-  window.addEventListener('scroll', () => {
-    if (_ignoreScroll || !autoReading) return;
-    // 用户在自动跟读期间手动滚动 → 暂停
-    clearTimeout(scrollSyncTimer);
-    scrollSyncTimer = setTimeout(() => {
-      if (autoReading) {
-        stopAutoRead();
-      }
-    }, 200);
-  }, { passive: true });
+  /* =============================================================
+   * 手动滚动检测 — 用 rAF 位置对比替代 scroll 事件
+   * 彻底避免 scrollIntoView 触发 scroll 事件导致的误中断
+   * ============================================================= */
+  function scrollCheckLoop() {
+    const currentY = window.scrollY;
+    const delta = Math.abs(currentY - _lastScrollY);
+
+    if (!_programScroll && autoReading && delta > 80) {
+      // 非程序滚动且位移较大 → 用户手动滚动 → 暂停跟读
+      stopAutoRead();
+    }
+
+    // 非程序滚动期间，持续更新基准位置
+    if (!_programScroll) {
+      _lastScrollY = currentY;
+    }
+
+    requestAnimationFrame(scrollCheckLoop);
+  }
+  requestAnimationFrame(scrollCheckLoop);
 
   /* ===== 页面指示器 ===== */
   let indicator = null;
-  let indicatorTimer = null;
 
   function createIndicator() {
+    if (document.getElementById('har-indicator')) return;
+
     indicator = document.createElement('div');
     indicator.id = 'har-indicator';
     indicator.innerHTML =
@@ -314,22 +500,22 @@
     if (autoReading) {
       indicator.classList.add('har-ind-active');
       indicator.classList.remove('har-ind-highlight-only');
-      arrow.textContent = '▶';
-      text.textContent = '跟读中';
+      arrow.textContent = '\u25b6';
+      text.textContent = '\u8ddf\u8bfb\u4e2d';
       info.textContent =
         (currentIndex + 1) + '/' + lines.length +
-        ' · ' + dwellSeconds + 's/行';
+        ' \u00b7 ' + dwellSeconds + 's/\u884c';
     } else if (highlightActive) {
       indicator.classList.remove('har-ind-active');
       indicator.classList.add('har-ind-highlight-only');
-      arrow.textContent = '◆';
-      text.textContent = '高亮';
+      arrow.textContent = '\u25c6';
+      text.textContent = '\u9ad8\u4eae';
       info.textContent = (currentIndex + 1) + '/' + lines.length;
     } else {
       indicator.classList.remove('har-ind-active');
       indicator.classList.remove('har-ind-highlight-only');
-      arrow.textContent = '◇';
-      text.textContent = '已暂停';
+      arrow.textContent = '\u25c7';
+      text.textContent = '\u5df2\u6682\u505c';
       info.textContent = '';
     }
   }
@@ -358,7 +544,9 @@
             : '',
           speedLevel,
           dwellSeconds,
-          settings
+          settings,
+          contentRoot: _cachedRoot ? _cachedRoot.tagName.toLowerCase() +
+            (_cachedRoot.id ? '#' + _cachedRoot.id : '') : ''
         });
         break;
 
@@ -382,9 +570,14 @@
 
       case 'HAR_GOTO_LINE':
         if (!highlightActive) toggleHighlight(true);
-        const lineIdx = Math.max(0, Math.min(msg.line - 1, lines.length - 1));
-        goToLine(lineIdx, false);
-        if (autoReading) scheduleNext();
+        {
+          const idx = Math.max(0, Math.min(msg.line - 1, lines.length - 1));
+          goToLine(idx, false);
+          if (autoReading) {
+            _lastScrollY = window.scrollY;
+            scheduleNext();
+          }
+        }
         sendResponse({ ok: true });
         break;
 
@@ -410,13 +603,16 @@
     if (e.ctrlKey && !e.shiftKey && e.code === 'Space') {
       toggleAutoRead();
       handled = true;
-    } else if (e.ctrlKey && !e.shiftKey && (e.code === 'ArrowDown' || e.key === 'ArrowDown')) {
+    } else if (e.ctrlKey && !e.shiftKey &&
+               (e.code === 'ArrowDown' || e.key === 'ArrowDown')) {
       nextLine();
       handled = true;
-    } else if (e.ctrlKey && !e.shiftKey && (e.code === 'ArrowUp' || e.key === 'ArrowUp')) {
+    } else if (e.ctrlKey && !e.shiftKey &&
+               (e.code === 'ArrowUp' || e.key === 'ArrowUp')) {
       prevLine();
       handled = true;
-    } else if (e.ctrlKey && e.shiftKey && (e.code === 'KeyL' || e.key === 'L')) {
+    } else if (e.ctrlKey && e.shiftKey &&
+               (e.code === 'KeyL' || e.key === 'L')) {
       toggleHighlight();
       handled = true;
     }
@@ -457,7 +653,6 @@
       }
     });
 
-    // 延迟创建指示器，确保 DOM 就绪
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', createIndicator);
     } else {

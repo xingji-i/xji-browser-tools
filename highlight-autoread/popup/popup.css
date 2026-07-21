@@ -51,6 +51,18 @@ body {
   border-bottom: 1px solid #eee;
 }
 
+/* 主体区域信息 */
+.content-root-info {
+  padding: 2px 16px 4px;
+  font-size: 10px;
+  color: #aaa;
+  background: #fff;
+}
+
+.content-root-info:empty {
+  display: none;
+}
+
 .status-dot {
   width: 8px;
   height: 8px;

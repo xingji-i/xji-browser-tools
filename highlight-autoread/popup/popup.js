@@ -26,6 +26,7 @@
   const btnHighlight = $('btnHighlight');
   const bgColor = $('bgColor');
   const outlineColor = $('outlineColor');
+  const contentRootInfo = $('contentRootInfo');
 
   let currentTab = null;
   let lastState = null;
@@ -82,6 +83,14 @@
 
     // 文本预览
     textPreview.textContent = state.currentText || '等待开始…';
+
+    // 主体区域信息
+    if (state.contentRoot) {
+      contentRootInfo.textContent = '主体区域: <' + state.contentRoot + '>';
+      contentRootInfo.style.display = '';
+    } else {
+      contentRootInfo.style.display = 'none';
+    }
 
     // 按钮状态
     if (state.autoReading) {
