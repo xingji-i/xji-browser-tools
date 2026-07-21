@@ -1,6 +1,6 @@
 /**
  * AutoTranslate - 翻译管理器
- * 封装 DeepL API 调用，处理批量翻译、速率限制、错误重试
+ * 封装 Azure Translator API 调用，处理批量翻译、速率限制、错误重试
  */
 
 window.AutoTranslate = window.AutoTranslate || {};
@@ -8,9 +8,9 @@ window.AutoTranslate = window.AutoTranslate || {};
 window.AutoTranslate.Translator = (function() {
   'use strict';
 
-  // DeepL 单次请求最大文本数
+  // 单次请求最大文本数
   const MAX_BATCH_SIZE = 50;
-  // DeepL 单次请求最大字符数
+  // 单次请求最大字符数
   const MAX_BATCH_CHARS = 50000;
   // 请求间隔（毫秒）
   const REQUEST_INTERVAL = 1000;

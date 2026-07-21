@@ -402,48 +402,6 @@
       border-color: #C6F6D5;
     }
 
-    /* Account type selector */
-    .account-type-group {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .account-type-btn {
-      flex: 1;
-      padding: 10px 16px;
-      border: 2px solid #E2E8F0;
-      border-radius: 8px;
-      background: white;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
-    }
-
-    .account-type-btn:hover {
-      border-color: #BEE3F8;
-    }
-
-    .account-type-btn.active {
-      border-color: #4285F4;
-      background: #EBF8FF;
-    }
-
-    .account-type-btn .type-name {
-      font-weight: 600;
-      font-size: 14px;
-      color: #2D3748;
-    }
-
-    .account-type-btn .type-desc {
-      font-size: 11px;
-      color: #718096;
-      margin-top: 2px;
-    }
-
-    .account-type-btn.active .type-name {
-      color: #2B6CB0;
-    }
   </style>
 </head>
 <body>
@@ -459,35 +417,30 @@
       </div>
     </div>
 
-    <!-- DeepL API 配置 -->
+    <!-- Azure Translator API 配置 -->
     <div class="section">
       <div class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
-        DeepL API 配置
+        Azure Translator 配置
       </div>
       <div class="section-desc">
-        需要一个 DeepL API Key 来使用翻译功能。免费版每月可翻译 50 万字符。
-        <a href="https://www.deepl.com/pro-api" target="_blank">获取 API Key →</a>
-      </div>
-
-      <div class="account-type-group">
-        <div class="account-type-btn active" data-type="free">
-          <div class="type-name">Free</div>
-          <div class="type-desc">免费，50万字符/月</div>
-        </div>
-        <div class="account-type-btn" data-type="pro">
-          <div class="type-name">Pro</div>
-          <div class="type-desc">付费，更高限额</div>
-        </div>
+        需要一个 Azure Translator API Key 来使用翻译功能。Azure 免费层每月可翻译 200 万字符。
+        <a href="https://portal.azure.com/#create/Microsoft.CognitiveServicesTextTranslation" target="_blank">创建 Translator 资源 →</a>
       </div>
 
       <div class="form-group">
         <label class="form-label">API Key</label>
-        <input type="password" class="form-input" id="api-key" placeholder="输入你的 DeepL API Key">
-        <div class="form-hint">API Key 以安全方式存储在浏览器本地</div>
+        <input type="password" class="form-input" id="api-key" placeholder="输入你的 Azure Translator Key">
+        <div class="form-hint">在 Azure Portal → Translator 资源 → Keys and Endpoint 中获取</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Region（区域）</label>
+        <input type="text" class="form-input" id="azure-region" placeholder="例如 eastasia、global" value="global">
+        <div class="form-hint">在 Azure Portal 中查看 Translator 资源的 Location，常用: eastasia, global, japaneast, westeurope</div>
       </div>
 
       <button class="btn btn-secondary" id="btn-test-api" style="margin-top: 8px;">

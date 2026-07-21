@@ -1034,7 +1034,7 @@ window.AutoTranslate.Panel = (function() {
 
     // 检查 API Key
     if (!AT.Settings.isConfigured()) {
-      showError('请先配置 DeepL API Key', '点击右上角设置按钮，进入设置页面配置 API Key。');
+      showError('请先配置 Azure Translator API Key', '点击右上角设置按钮，进入设置页面配置 API Key。');
       return;
     }
 

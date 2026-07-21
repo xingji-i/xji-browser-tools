@@ -1,54 +1,76 @@
 /**
  * AutoTranslate - Background Service Worker
- * 处理 DeepL API 翻译请求，管理消息路由
+ * 处理 Azure Translator API 翻译请求，管理消息路由
  */
 
-const DEEPL_FREE_ENDPOINT = 'https://api-free.deepl.com/v2/translate';
-const DEEPL_PRO_ENDPOINT = 'https://api.deepl.com/v2/translate';
+const AZURE_ENDPOINT = 'https://api.cognitive.microsofttranslator.com/translate';
+const AZURE_API_VERSION = '3.0';
+
+// Azure Translator 语言代码映射
+const LANG_MAP = {
+  'ZH': 'zh-Hans',
+  'EN': 'en',
+  'JA': 'ja',
+  'KO': 'ko',
+  'FR': 'fr',
+  'DE': 'de',
+  'ES': 'es',
+  'RU': 'ru',
+  'PT': 'pt-BR',
+  'IT': 'it'
+};
+
+function toAzureLang(code) {
+  if (!code || code === 'auto') return '';
+  return LANG_MAP[code] || code.toLowerCase();
+}
 
 // 翻译请求队列，防止并发过多
 let pendingRequests = [];
 let isProcessing = false;
 
 /**
- * 调用 DeepL API 翻译文本
+ * 调用 Azure Translator API 翻译文本
  */
-async function translateWithDeepL(texts, sourceLang, targetLang, apiKey, isProAccount) {
-  const endpoint = isProAccount ? DEEPL_PRO_ENDPOINT : DEEPL_FREE_ENDPOINT;
+async function translateWithAzure(texts, sourceLang, targetLang, apiKey, region) {
+  const params = new URLSearchParams({
+    'api-version': AZURE_API_VERSION,
+    'to': toAzureLang(targetLang)
+  });
 
-  const body = new URLSearchParams();
-  body.append('auth_key', apiKey);
-  body.append('target_lang', targetLang);
-  if (sourceLang && sourceLang !== 'auto') {
-    body.append('source_lang', sourceLang);
+  const fromCode = toAzureLang(sourceLang);
+  if (fromCode) {
+    params.set('from', fromCode);
   }
 
-  // DeepL 支持批量翻译，一次请求多个 text 参数
-  texts.forEach(text => body.append('text', text));
+  const body = texts.map(text => ({ Text: text }));
 
-  // 保留段落格式
-  body.append('tag_handling', 'html');
-  body.append('ignore_tags', 'code,pre');
-
-  const response = await fetch(endpoint, {
+  const response = await fetch(`${AZURE_ENDPOINT}?${params}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString()
+    headers: {
+      'Content-Type': 'application/json',
+      'Ocp-Apim-Subscription-Key': apiKey,
+      'Ocp-Apim-Subscription-Region': region || 'global'
+    },
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    let errorMessage = `DeepL API 错误 (${response.status})`;
-    if (response.status === 403) errorMessage = 'DeepL API Key 无效或已过期';
-    else if (response.status === 429) errorMessage = 'DeepL API 请求过于频繁，请稍后再试';
-    else if (response.status === 456) errorMessage = 'DeepL API 字符额度已用完';
+    let errorMessage = `Azure Translator 错误 (${response.status})`;
+    if (response.status === 401) errorMessage = 'Azure API Key 无效或已过期';
+    else if (response.status === 429) errorMessage = 'Azure API 请求过于频繁，请稍后再试';
+    else if (response.status === 403) errorMessage = 'Azure API 权限不足，请检查 Key 和 Region';
     throw new Error(`${errorMessage}: ${errorText}`);
   }
 
   const data = await response.json();
-  return data.translations.map(t => ({
-    text: t.text,
-    detectedSourceLang: t.detected_source_lang
+  // Azure 返回数组，每项包含 translations[0].text 和 detectedLanguage
+  return data.map(item => ({
+    text: item.translations[0].text,
+    detectedSourceLang: item.detectedLanguage
+      ? (item.detectedLanguage.language || '').toUpperCase()
+      : ''
   }));
 }
 
@@ -71,15 +93,15 @@ function detectLanguage(text) {
 async function handleTranslateRequest(message, sender) {
   const { texts, sourceLang, targetLang } = message;
 
-  // 从 storage 获取 API Key 和账户类型
-  const settings = await chrome.storage.local.get(['deepLApiKey', 'deepLIsPro', 'autoDetectDirection']);
+  // 从 storage 获取 API Key 和 Region
+  const settings = await chrome.storage.local.get(['azureApiKey', 'azureRegion', 'autoDetectDirection']);
 
-  if (!settings.deepLApiKey) {
-    throw new Error('请先在设置中配置 DeepL API Key');
+  if (!settings.azureApiKey) {
+    throw new Error('请先在设置中配置 Azure Translator API Key');
   }
 
-  const apiKey = settings.deepLApiKey;
-  const isPro = settings.deepLIsPro || false;
+  const apiKey = settings.azureApiKey;
+  const region = settings.azureRegion || 'global';
 
   // 如果源语言是 auto，尝试检测
   let effectiveSourceLang = sourceLang;
@@ -99,12 +121,12 @@ async function handleTranslateRequest(message, sender) {
     }
   }
 
-  const results = await translateWithDeepL(
+  const results = await translateWithAzure(
     texts,
     effectiveSourceLang,
     effectiveTargetLang,
     apiKey,
-    isPro
+    region
   );
 
   return {
@@ -146,9 +168,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'GET_STATUS') {
     // 返回插件状态
-    chrome.storage.local.get(['deepLApiKey'], (settings) => {
+    chrome.storage.local.get(['azureApiKey'], (settings) => {
       sendResponse({
-        configured: !!settings.deepLApiKey
+        configured: !!settings.azureApiKey
       });
     });
     return true;

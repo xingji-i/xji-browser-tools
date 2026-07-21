@@ -54,10 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function checkApiStatus() {
-    chrome.storage.local.get(['deepLApiKey', 'deepLIsPro'], (settings) => {
-      if (settings.deepLApiKey) {
-        const type = settings.deepLIsPro ? 'Pro' : 'Free';
-        apiStatusText.textContent = `DeepL API 已配置 (${type})`;
+    chrome.storage.local.get(['azureApiKey', 'azureRegion'], (settings) => {
+      if (settings.azureApiKey) {
+        const region = settings.azureRegion || 'global';
+        apiStatusText.textContent = `Azure Translator 已配置 (${region})`;
         apiStatusCard.classList.add('success');
         apiStatusCard.classList.remove('error');
       } else {

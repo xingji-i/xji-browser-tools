@@ -2,15 +2,14 @@
   "manifest_version": 3,
   "name": "AutoTranslate - 双语对照翻译",
   "version": "1.0.0",
-  "description": "智能识别页面内容，DeepL驱动的中英双语段落对照翻译。支持网页、PDF、电子书阅读场景。",
+  "description": "智能识别页面内容，Azure Translator驱动的中英双语段落对照翻译。支持网页、PDF、电子书阅读场景。",
   "permissions": [
     "storage",
     "activeTab",
     "scripting"
   ],
   "host_permissions": [
-    "https://api-free.deepl.com/*",
-    "https://api.deepl.com/*"
+    "https://api.cognitive.microsofttranslator.com/*"
   ],
   "background": {
     "service_worker": "background/service-worker.js"

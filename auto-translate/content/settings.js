@@ -9,8 +9,8 @@ window.AutoTranslate.Settings = (function() {
   'use strict';
 
   const DEFAULT_SETTINGS = {
-    deepLApiKey: '',
-    deepLIsPro: false,
+    azureApiKey: '',
+    azureRegion: 'global',
     sourceLang: 'auto',       // 'auto', 'ZH', 'EN', 'JA', ...
     targetLang: 'ZH',         // 默认目标语言
     autoTranslate: false,     // 打开页面自动翻译
@@ -118,7 +118,7 @@ window.AutoTranslate.Settings = (function() {
    * 检查 API Key 是否已配置
    */
   function isConfigured() {
-    return !!currentSettings.deepLApiKey;
+    return !!currentSettings.azureApiKey;
   }
 
   /**

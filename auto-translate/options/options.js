@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   // ========== 元素引用 ==========
   const apiKeyInput = document.getElementById('api-key');
-  const accountTypeBtns = document.querySelectorAll('.account-type-btn');
+  const regionInput = document.getElementById('azure-region');
   const sourceLangSelect = document.getElementById('source-lang');
   const targetLangSelect = document.getElementById('target-lang');
   const displayModeRadios = document.querySelectorAll('input[name="displayMode"]');
@@ -24,14 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const cacheChars = document.getElementById('cache-chars');
   const toast = document.getElementById('toast');
 
-  let isProAccount = false;
-
   // ========== 加载已保存的设置 ==========
 
   async function loadSettings() {
     const defaults = {
-      deepLApiKey: '',
-      deepLIsPro: false,
+      azureApiKey: '',
+      azureRegion: 'global',
       sourceLang: 'auto',
       targetLang: 'ZH',
       autoTranslate: false,
@@ -45,9 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const settings = await chrome.storage.local.get(Object.keys(defaults));
     const s = { ...defaults, ...settings };
 
-    apiKeyInput.value = s.deepLApiKey;
-    isProAccount = s.deepLIsPro;
-    updateAccountTypeUI();
+    apiKeyInput.value = s.azureApiKey;
+    regionInput.value = s.azureRegion;
 
     sourceLangSelect.value = s.sourceLang;
     targetLangSelect.value = s.targetLang;
@@ -71,23 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCacheStats();
   }
 
-  // ========== 账户类型切换 ==========
-
-  accountTypeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      isProAccount = btn.dataset.type === 'pro';
-      updateAccountTypeUI();
-    });
-  });
-
-  function updateAccountTypeUI() {
-    accountTypeBtns.forEach(btn => {
-      btn.classList.toggle('active',
-        (btn.dataset.type === 'pro') === isProAccount
-      );
-    });
-  }
-
   // ========== Radio group UI ==========
 
   function setupRadioGroup(radios) {
@@ -107,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnTestApi.addEventListener('click', async () => {
     const apiKey = apiKeyInput.value.trim();
+    const region = regionInput.value.trim() || 'global';
     if (!apiKey) {
       showTestResult('请输入 API Key', 'error');
       return;
@@ -116,30 +97,34 @@ document.addEventListener('DOMContentLoaded', () => {
     btnTestApi.disabled = true;
 
     try {
-      const endpoint = isProAccount
-        ? 'https://api.deepl.com/v2/translate'
-        : 'https://api-free.deepl.com/v2/translate';
-
-      const body = new URLSearchParams();
-      body.append('auth_key', apiKey);
-      body.append('text', 'Hello, AutoTranslate!');
-      body.append('target_lang', 'ZH');
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString()
+      const params = new URLSearchParams({
+        'api-version': '3.0',
+        'to': 'zh-Hans'
       });
+
+      const response = await fetch(
+        `https://api.cognitive.microsofttranslator.com/translate?${params}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Ocp-Apim-Subscription-Key': apiKey,
+            'Ocp-Apim-Subscription-Region': region
+          },
+          body: JSON.stringify([{ Text: 'Hello, AutoTranslate!' }])
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
-        const translated = data.translations[0].text;
+        const translated = data[0].translations[0].text;
         showTestResult(`连接成功！测试翻译: "Hello, AutoTranslate!" → "${translated}"`, 'success');
       } else {
         const text = await response.text();
         let msg = `API 错误 (${response.status})`;
-        if (response.status === 403) msg = 'API Key 无效，请检查后重试';
-        else if (response.status === 456) msg = '字符额度已用完，请升级或等待下月重置';
+        if (response.status === 401) msg = 'API Key 无效，请检查后重试';
+        else if (response.status === 403) msg = '权限不足，请检查 Key 和 Region 是否匹配';
+        else if (response.status === 429) msg = '请求过于频繁，请稍后再试';
         showTestResult(`${msg}: ${text}`, 'error');
       }
     } catch (error) {
@@ -159,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnSave.addEventListener('click', async () => {
     const settings = {
-      deepLApiKey: apiKeyInput.value.trim(),
-      deepLIsPro: isProAccount,
+      azureApiKey: apiKeyInput.value.trim(),
+      azureRegion: regionInput.value.trim() || 'global',
       sourceLang: sourceLangSelect.value,
       targetLang: targetLangSelect.value,
       autoTranslate: autoTranslate.checked,
@@ -185,8 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!confirm('确定要恢复所有默认设置吗？')) return;
 
     const defaults = {
-      deepLApiKey: '',
-      deepLIsPro: false,
+      azureApiKey: '',
+      azureRegion: 'global',
       sourceLang: 'auto',
       targetLang: 'ZH',
       autoTranslate: false,
