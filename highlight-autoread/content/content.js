@@ -501,21 +501,21 @@
       indicator.classList.add('har-ind-active');
       indicator.classList.remove('har-ind-highlight-only');
       arrow.textContent = '\u25b6';
-      text.textContent = '\u8ddf\u8bfb\u4e2d';
+      text.textContent = '跟读中 / Auto-Reading';
       info.textContent =
         (currentIndex + 1) + '/' + lines.length +
-        ' \u00b7 ' + dwellSeconds + 's/\u884c';
+        ' \u00b7 ' + dwellSeconds + 's/行 s/line';
     } else if (highlightActive) {
       indicator.classList.remove('har-ind-active');
       indicator.classList.add('har-ind-highlight-only');
       arrow.textContent = '\u25c6';
-      text.textContent = '\u9ad8\u4eae';
+      text.textContent = '高亮 / Highlight';
       info.textContent = (currentIndex + 1) + '/' + lines.length;
     } else {
       indicator.classList.remove('har-ind-active');
       indicator.classList.remove('har-ind-highlight-only');
       arrow.textContent = '\u25c7';
-      text.textContent = '\u5df2\u6682\u505c';
+      text.textContent = '已暂停 / Paused';
       info.textContent = '';
     }
   }

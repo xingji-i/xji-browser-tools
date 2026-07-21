@@ -64,17 +64,17 @@ function updateUI() {
   if (state.isScrolling) {
     btnToggle.classList.add("running");
     btnIcon.textContent = "⏸";
-    btnLabel.textContent = "停止滚动";
+    btnLabel.textContent = "停止滚动\nStop Scrolling";
     statusDot.classList.add("active");
     statusText.classList.add("active");
-    statusText.textContent = state.direction === "down" ? "向下滚动中…" : "向上滚动中…";
+    statusText.textContent = state.direction === "down" ? "向下滚动中…\nScrolling down…" : "向上滚动中…\nScrolling up…";
   } else {
     btnToggle.classList.remove("running");
     btnIcon.textContent = "▶";
-    btnLabel.textContent = "开始滚动";
+    btnLabel.textContent = "开始滚动\nStart Scrolling";
     statusDot.classList.remove("active");
     statusText.classList.remove("active");
-    statusText.textContent = "已停止";
+    statusText.textContent = "已停止\nStopped";
   }
 
   // 方向按钮

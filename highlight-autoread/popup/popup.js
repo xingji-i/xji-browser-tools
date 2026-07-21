@@ -52,10 +52,10 @@
   async function refreshState() {
     const state = await sendToContent({ type: 'HAR_GET_STATE' });
     if (!state) {
-      statusLabel.textContent = '不可用';
+      statusLabel.textContent = '不可用\nUnavailable';
       statusDot.className = 'status-dot';
       lineDisplay.textContent = '- / -';
-      textPreview.textContent = '当前页面不支持';
+      textPreview.textContent = '当前页面不支持\nNot supported';
       return;
     }
 
@@ -64,13 +64,13 @@
     // 状态指示
     if (state.autoReading) {
       statusDot.className = 'status-dot active';
-      statusLabel.textContent = '跟读中';
+      statusLabel.textContent = '跟读中\nAuto-Reading';
     } else if (state.highlightActive) {
       statusDot.className = 'status-dot highlight';
-      statusLabel.textContent = '高亮中';
+      statusLabel.textContent = '高亮中\nHighlighting';
     } else {
       statusDot.className = 'status-dot';
-      statusLabel.textContent = '已停止';
+      statusLabel.textContent = '已停止\nStopped';
     }
 
     // 行号
@@ -82,11 +82,11 @@
     }
 
     // 文本预览
-    textPreview.textContent = state.currentText || '等待开始…';
+    textPreview.textContent = state.currentText || '等待开始…\nWaiting…';
 
     // 主体区域信息
     if (state.contentRoot) {
-      contentRootInfo.textContent = '主体区域: <' + state.contentRoot + '>';
+      contentRootInfo.textContent = '主体区域 / Root: <' + state.contentRoot + '>';
       contentRootInfo.style.display = '';
     } else {
       contentRootInfo.style.display = 'none';
@@ -96,11 +96,11 @@
     if (state.autoReading) {
       btnAutoRead.classList.add('running');
       btnAutoIcon.textContent = '⏸';
-      btnAutoText.textContent = '暂停跟读';
+      btnAutoText.textContent = '暂停跟读\nPause';
     } else {
       btnAutoRead.classList.remove('running');
       btnAutoIcon.textContent = '▶';
-      btnAutoText.textContent = '开始跟读';
+      btnAutoText.textContent = '开始跟读\nStart Auto-Read';
     }
 
     // 高亮按钮

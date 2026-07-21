@@ -270,3 +270,8 @@ input[type="range"]::-moz-range-thumb {
 .shortcut-item span {
   color: #bbb;
 }
+
+/* ─── 双语 Bilingual ─────────────────────── */
+.en { font-size: 9px; color: #bbb; font-weight: 400; line-height: 1.2; display: block; margin-top: 1px; }
+.status-text { white-space: pre-line; }
+.btn-label { white-space: pre-line; text-align: center; }

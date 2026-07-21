@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>文档逐行高亮</title>
+  <title>文档逐行高亮 Doc Highlight</title>
   <style>
     * {
       margin: 0;
@@ -210,6 +210,9 @@
       color: #333;
       box-shadow: 0 1px 0 #bbb;
     }
+
+    .en { font-size: 9px; color: #bbb; font-weight: 400; display: block; margin-top: 1px; opacity: 0.8; }
+    .toggle-btn { white-space: pre-line; }
   </style>
 </head>
 <body>
@@ -219,58 +222,58 @@
       <path d="M4 6h16M4 12h16M4 18h10"/>
       <circle cx="20" cy="18" r="2" fill="currentColor"/>
     </svg>
-    <h1>文档逐行高亮</h1>
+    <h1>文档逐行高亮 <small class="en">Doc Line Highlight</small></h1>
   </div>
 
   <!-- 状态 -->
   <div class="section">
-    <div class="section-title">状态</div>
+    <div class="section-title">状态 <small class="en">Status</small></div>
     <div class="status-bar">
       <div class="status-info">
-        <span class="status-label">当前行 / 总行数</span>
+        <span class="status-label">当前行/总行数 <small class="en">Current / Total</small></span>
         <span class="status-value" id="statusValue">- / -</span>
       </div>
       <button class="toggle-btn off" id="toggleBtn">开启</button>
     </div>
-    <div class="current-text" id="currentText">按 Ctrl+Shift+L 开启</div>
+    <div class="current-text" id="currentText">按 Ctrl+Shift+L 开启 <small class="en">Press Ctrl+Shift+L to start</small></div>
   </div>
 
   <!-- 跳转 -->
   <div class="section">
-    <div class="section-title">跳转到行</div>
+    <div class="section-title">跳转到行 <small class="en">Go to Line</small></div>
     <div class="goto-row">
-      <input type="number" class="goto-input" id="gotoInput" min="1" placeholder="输入行号">
-      <button class="goto-btn" id="gotoBtn">跳转</button>
+      <input type="number" class="goto-input" id="gotoInput" min="1" placeholder="输入行号 / Line #">
+      <button class="goto-btn" id="gotoBtn">跳转 <small class="en">Go</small></button>
     </div>
   </div>
 
   <!-- 颜色 -->
   <div class="section">
-    <div class="section-title">高亮颜色</div>
+    <div class="section-title">高亮颜色 <small class="en">Colors</small></div>
     <div class="color-row">
-      <span class="color-label">背景色</span>
+      <span class="color-label">背景色 <small class="en">Background</small></span>
       <input type="color" class="color-input" id="bgColor" value="#fff3b0">
     </div>
     <div class="color-row">
-      <span class="color-label">边框色</span>
+      <span class="color-label">边框色 <small class="en">Outline</small></span>
       <input type="color" class="color-input" id="outlineColor" value="#ffb300">
     </div>
   </div>
 
   <!-- 快捷键 -->
   <div class="section">
-    <div class="section-title">快捷键</div>
+    <div class="section-title">快捷键 <small class="en">Shortcuts</small></div>
     <div class="shortcuts">
       <div class="shortcut-item">
-        <span class="shortcut-desc">下一行</span>
+        <span class="shortcut-desc">下一行 <small class="en">Next</small></span>
         <span><kbd>Ctrl</kbd> + <kbd>↓</kbd></span>
       </div>
       <div class="shortcut-item">
-        <span class="shortcut-desc">上一行</span>
+        <span class="shortcut-desc">上一行 <small class="en">Previous</small></span>
         <span><kbd>Ctrl</kbd> + <kbd>↑</kbd></span>
       </div>
       <div class="shortcut-item">
-        <span class="shortcut-desc">开关</span>
+        <span class="shortcut-desc">开关 <small class="en">Toggle</small></span>
         <span><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>L</kbd></span>
       </div>
     </div>

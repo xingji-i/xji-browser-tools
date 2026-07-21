@@ -56,17 +56,17 @@ function updateUI() {
   if (state.isScrolling) {
     btnToggle.classList.add("running");
     btnIcon.textContent = "⏸";
-    btnLabel.textContent = "Stop Scrolling";
+    btnLabel.textContent = "停止滚动\nStop Scrolling";
     statusDot.classList.add("active");
     statusText.classList.add("active");
-    statusText.textContent = state.direction === "down" ? "Scrolling down…" : "Scrolling up…";
+    statusText.textContent = state.direction === "down" ? "向下滚动中…\nScrolling down…" : "向上滚动中…\nScrolling up…";
   } else {
     btnToggle.classList.remove("running");
     btnIcon.textContent = "▶";
-    btnLabel.textContent = "Start Scrolling";
+    btnLabel.textContent = "开始滚动\nStart Scrolling";
     statusDot.classList.remove("active");
     statusText.classList.remove("active");
-    statusText.textContent = "Stopped";
+    statusText.textContent = "已停止\nStopped";
   }
 
   btnDown.classList.toggle("active", state.direction === "down");

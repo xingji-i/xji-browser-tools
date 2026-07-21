@@ -42,7 +42,7 @@ window.AutoTranslate.Panel = (function() {
     panelElement = document.createElement('div');
     panelElement.className = 'at-panel';
     panelElement.setAttribute('role', 'complementary');
-    panelElement.setAttribute('aria-label', '翻译面板');
+    panelElement.setAttribute('aria-label', '翻译面板 Translation Panel');
 
     // 调整大小手柄
     resizeHandle = document.createElement('div');
@@ -60,24 +60,24 @@ window.AutoTranslate.Panel = (function() {
         <span class="at-title">AutoTranslate</span>
       </div>
       <div class="at-header-right">
-        <button class="at-btn at-btn-icon" id="btn-scan" title="重新扫描页面">
+        <button class="at-btn at-btn-icon" id="btn-scan" title="重新扫描 Rescan">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M1 4v6h6M23 20v-6h-6"/>
             <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
           </svg>
         </button>
-        <button class="at-btn at-btn-icon" id="btn-settings" title="设置">
+        <button class="at-btn at-btn-icon" id="btn-settings" title="设置 Settings">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68 1.65 1.65 0 0 0 10 3.17V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
         </button>
-        <button class="at-btn at-btn-icon" id="btn-minimize" title="最小化">
+        <button class="at-btn at-btn-icon" id="btn-minimize" title="最小化 Minimize">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
         </button>
-        <button class="at-btn at-btn-icon" id="btn-close" title="关闭">
+        <button class="at-btn at-btn-icon" id="btn-close" title="关闭 Close">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
@@ -92,33 +92,33 @@ window.AutoTranslate.Panel = (function() {
     toolbar.innerHTML = `
       <div class="at-lang-select">
         <select id="source-lang">
-          <option value="auto">自动检测</option>
-          <option value="ZH">中文</option>
-          <option value="EN">英语</option>
-          <option value="JA">日语</option>
-          <option value="KO">韩语</option>
-          <option value="FR">法语</option>
-          <option value="DE">德语</option>
-          <option value="ES">西班牙语</option>
-          <option value="RU">俄语</option>
+          <option value="auto">自动检测 Auto</option>
+          <option value="ZH">中文 Chinese</option>
+          <option value="EN">英语 English</option>
+          <option value="JA">日语 Japanese</option>
+          <option value="KO">韩语 Korean</option>
+          <option value="FR">法语 French</option>
+          <option value="DE">德语 German</option>
+          <option value="ES">西班牙语 Spanish</option>
+          <option value="RU">俄语 Russian</option>
         </select>
         <span class="at-arrow">→</span>
         <select id="target-lang">
-          <option value="ZH">中文</option>
-          <option value="EN">英语</option>
-          <option value="JA">日语</option>
-          <option value="KO">韩语</option>
-          <option value="FR">法语</option>
-          <option value="DE">德语</option>
-          <option value="ES">西班牙语</option>
-          <option value="RU">俄语</option>
+          <option value="ZH">中文 Chinese</option>
+          <option value="EN">英语 English</option>
+          <option value="JA">日语 Japanese</option>
+          <option value="KO">韩语 Korean</option>
+          <option value="FR">法语 French</option>
+          <option value="DE">德语 German</option>
+          <option value="ES">西班牙语 Spanish</option>
+          <option value="RU">俄语 Russian</option>
         </select>
       </div>
       <button class="at-btn at-btn-primary" id="btn-translate">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="5 3 19 12 5 21 5 3"/>
         </svg>
-        翻译
+        翻译 Translate
       </button>
     `;
     panelElement.appendChild(toolbar);
@@ -132,8 +132,8 @@ window.AutoTranslate.Panel = (function() {
           <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
           <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
         </svg>
-        <p>点击「翻译」按钮开始翻译当前页面内容</p>
-        <p class="at-hint">支持网页文章、新闻、博客等内容</p>
+        <p>点击「翻译」按钮开始翻译当前页面内容<br><small style="font-size:9px;color:#bbb">Click Translate to start</small></p>
+        <p class="at-hint">支持网页文章、新闻、博客等内容<br><small style="font-size:9px;color:#bbb">Supports articles, news, blogs</small></p>
       </div>
     `;
     panelElement.appendChild(contentArea);
@@ -142,7 +142,7 @@ window.AutoTranslate.Panel = (function() {
     statusBar = document.createElement('div');
     statusBar.className = 'at-status-bar';
     statusBar.innerHTML = `
-      <span class="at-status-text">就绪</span>
+      <span class="at-status-text">就绪 Ready</span>
       <span class="at-status-right">
         <span class="at-block-count"></span>
         <span class="at-char-count"></span>
@@ -820,7 +820,7 @@ window.AutoTranslate.Panel = (function() {
     currentBlocks = result.blocks;
 
     // 更新状态栏
-    updateStatus(`发现 ${result.totalCount} 个内容块`, result.totalChars);
+    updateStatus(`发现 ${result.totalCount} 个内容块 Found ${result.totalCount} blocks`, result.totalChars);
 
     // 更新语言选择
     const sourceLangSelect = shadowRoot.getElementById('source-lang');
@@ -838,8 +838,8 @@ window.AutoTranslate.Panel = (function() {
     if (currentBlocks.length === 0) {
       contentArea.innerHTML = `
         <div class="at-empty-state">
-          <p>未找到可翻译的内容</p>
-          <p class="at-hint">请确保页面包含文章或正文内容</p>
+          <p>未找到可翻译的内容<br><small style="font-size:9px;color:#bbb">No translatable content found</small></p>
+          <p class="at-hint">请确保页面包含文章或正文内容<br><small style="font-size:9px;color:#bbb">Make sure the page has article content</small></p>
         </div>
       `;
     } else {
@@ -864,7 +864,7 @@ window.AutoTranslate.Panel = (function() {
     const hint = document.createElement('div');
     hint.className = 'at-loading';
     hint.style.justifyContent = 'center';
-    hint.innerHTML = `<span>共 ${blocks.length} 段内容，点击「翻译」开始</span>`;
+    hint.innerHTML = `<span>共 ${blocks.length} 段内容，点击「翻译」开始 ${blocks.length} blocks, click Translate</span>`;
     contentArea.appendChild(hint);
   }
 
@@ -893,7 +893,7 @@ window.AutoTranslate.Panel = (function() {
       <span class="at-lang-badge ${langBadgeClass}">${langLabel}</span>
       <div class="at-original-text ${block.type === 'heading' ? 'at-original-heading' : ''}">${escapeHtml(block.text)}</div>
       <div class="at-card-actions">
-        <button class="at-card-btn" data-action="copy-original" title="复制原文">
+        <button class="at-card-btn" data-action="copy-original" title="复制原文 Copy original">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -913,7 +913,7 @@ window.AutoTranslate.Panel = (function() {
         <span class="at-lang-badge ${targetLangBadge}">${targetLangLabel}</span>
         <div class="at-translation-text">${escapeHtml(translation.translatedText)}</div>
         <div class="at-card-actions">
-          <button class="at-card-btn" data-action="copy-translation" title="复制译文">
+          <button class="at-card-btn" data-action="copy-translation" title="复制译文 Copy translation">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -927,7 +927,7 @@ window.AutoTranslate.Panel = (function() {
       `;
     } else {
       translationDiv.innerHTML = `
-        <div class="at-translation-text at-translation-placeholder">等待翻译...</div>
+        <div class="at-translation-text at-translation-placeholder">等待翻译... Waiting</div>
       `;
     }
 
@@ -987,7 +987,7 @@ window.AutoTranslate.Panel = (function() {
         <span class="at-lang-badge ${targetLangBadge}">${targetLangLabel}</span>
         <div class="at-translation-text">${escapeHtml(translation.translatedText)}</div>
         <div class="at-card-actions">
-          <button class="at-card-btn" data-action="copy-translation" title="复制译文">
+          <button class="at-card-btn" data-action="copy-translation" title="复制译文 Copy translation">
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -1034,7 +1034,7 @@ window.AutoTranslate.Panel = (function() {
 
     // 检查 API Key
     if (!AT.Settings.isConfigured()) {
-      showError('请先配置 Azure Translator API Key', '点击右上角设置按钮，进入设置页面配置 API Key。');
+      showError('请先配置 Azure Translator API Key\nAPI Key not configured', '点击右上角设置按钮，进入设置页面配置 API Key。\nClick Settings to configure API Key.');
       return;
     }
 
@@ -1044,14 +1044,14 @@ window.AutoTranslate.Panel = (function() {
     }
 
     if (currentBlocks.length === 0) {
-      showError('无可翻译的内容', '页面中未找到文章或正文内容。');
+      showError('无可翻译的内容\nNo content to translate', '页面中未找到文章或正文内容。\nNo article or body content found.');
       return;
     }
 
     isTranslating = true;
     const translateBtn = shadowRoot.getElementById('btn-translate');
     translateBtn.disabled = true;
-    translateBtn.innerHTML = '<div class="at-spinner"></div> 翻译中...';
+    translateBtn.innerHTML = '<div class="at-spinner"></div> 翻译中... Translating...';
 
     const settings = AT.Settings.getAll();
     const sourceLang = shadowRoot.getElementById('source-lang').value;
@@ -1096,7 +1096,7 @@ window.AutoTranslate.Panel = (function() {
             const pct = Math.round((translated / total) * 100);
             const bar = progressBar.querySelector('.at-progress-bar');
             if (bar) bar.style.width = pct + '%';
-            updateStatus(`翻译中... ${translated}/${total}`, null);
+            updateStatus(`翻译中... ${translated}/${total} Translating`, null);
           },
           (result) => {
             // 单个块翻译完成
@@ -1113,7 +1113,7 @@ window.AutoTranslate.Panel = (function() {
 
       } catch (error) {
         progressBar.remove();
-        showError('翻译出错', error.message);
+        showError('翻译出错\nTranslation error', error.message);
       }
     }
 
@@ -1123,12 +1123,12 @@ window.AutoTranslate.Panel = (function() {
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="5 3 19 12 5 21 5 3"/>
       </svg>
-      翻译
+      翻译 Translate
     `;
 
     // 更新状态
     const stats = AT.Cache.getStats();
-    updateStatus('翻译完成', null, currentBlocks.length);
+    updateStatus('翻译完成\nTranslation complete', null, currentBlocks.length);
   }
 
   /**
@@ -1161,10 +1161,10 @@ window.AutoTranslate.Panel = (function() {
 
     if (text) statusText.textContent = text;
     if (blockCount !== undefined && blockCount !== null) {
-      blockCountEl.textContent = `${blockCount} 段`;
+      blockCountEl.textContent = `${blockCount} 段 blocks`;
     }
     if (charCount !== undefined && charCount !== null) {
-      charCountEl.textContent = `~${Math.round(charCount / 1000)}k 字符`;
+      charCountEl.textContent = `~${Math.round(charCount / 1000)}k 字符 chars`;
     }
   }
 

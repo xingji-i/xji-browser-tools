@@ -89,11 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKey = apiKeyInput.value.trim();
     const region = regionInput.value.trim() || 'global';
     if (!apiKey) {
-      showTestResult('请输入 API Key', 'error');
+      showTestResult('请输入 API Key\nPlease enter API Key', 'error');
       return;
     }
 
-    showTestResult('正在测试连接...', 'loading');
+    showTestResult('正在测试连接...\nTesting connection...', 'loading');
     btnTestApi.disabled = true;
 
     try {
@@ -118,11 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (response.ok) {
         const data = await response.json();
         const translated = data[0].translations[0].text;
-        showTestResult(`连接成功！测试翻译: "Hello, AutoTranslate!" → "${translated}"`, 'success');
+        showTestResult(`连接成功！测试翻译: "Hello, AutoTranslate!" → "${translated}"\nConnection successful!`, 'success');
       } else {
         const text = await response.text();
         let msg = `API 错误 (${response.status})`;
-        if (response.status === 401) msg = 'API Key 无效，请检查后重试';
+        if (response.status === 401) msg = 'API Key 无效，请检查后重试\nInvalid API Key';
         else if (response.status === 403) msg = '权限不足，请检查 Key 和 Region 是否匹配';
         else if (response.status === 429) msg = '请求过于频繁，请稍后再试';
         showTestResult(`${msg}: ${text}`, 'error');
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       await chrome.storage.local.set(settings);
-      showToast('设置已保存', 'success');
+      showToast('设置已保存\nSettings saved', 'success');
     } catch (error) {
       showToast('保存失败: ' + error.message, 'error');
     }
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ========== 重置设置 ==========
 
   btnReset.addEventListener('click', async () => {
-    if (!confirm('确定要恢复所有默认设置吗？')) return;
+    if (!confirm('确定要恢复所有默认设置吗？\nReset all settings to defaults?')) return;
 
     const defaults = {
       azureApiKey: '',
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     await chrome.storage.local.set(defaults);
     loadSettings();
-    showToast('已恢复默认设置', 'success');
+    showToast('已恢复默认设置\nDefaults restored', 'success');
   });
 
   // ========== 缓存管理 ==========
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   btnClearCache.addEventListener('click', async () => {
-    if (!confirm('确定要清除所有翻译缓存吗？清除后翻译相同内容将重新调用 API。')) return;
+    if (!confirm('确定要清除所有翻译缓存吗？清除后翻译相同内容将重新调用 API。\nClear all translation cache?')) return;
 
     const all = await chrome.storage.local.get(null);
     const keysToRemove = Object.keys(all).filter(k => k.startsWith('at_cache_'));
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click();
     URL.revokeObjectURL(url);
 
-    showToast('缓存已导出', 'success');
+    showToast('缓存已导出\nCache exported', 'success');
   });
 
   // ========== Toast ==========

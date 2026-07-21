@@ -161,7 +161,7 @@
     if (isScrolling) {
       indicator.style.display = "flex";
       arrowSpan.textContent = direction === "down" ? "↓" : "↑";
-      textSpan.textContent = direction === "down" ? "Scrolling" : "Scrolling ↑";
+      textSpan.textContent = direction === "down" ? "滚动中" : "向上滚动";
       speedSpan.textContent = `×${formatSpeed(speed)}`;
     } else {
       indicator.style.display = "none";

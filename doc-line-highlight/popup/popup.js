@@ -20,17 +20,17 @@ async function getActiveTab() {
 async function refreshStatus() {
   const tab = await getActiveTab();
   if (!tab || !tab.id) {
-    statusValue.textContent = "不可用";
+    statusValue.textContent = "不可用\nUnavailable";
     statusValue.classList.add("inactive");
     return;
   }
 
   chrome.tabs.sendMessage(tab.id, { type: "DLH_GET_STATUS" }, (response) => {
     if (chrome.runtime.lastError || !response) {
-      statusValue.textContent = "不可用";
+      statusValue.textContent = "不可用\nUnavailable";
       statusValue.classList.add("inactive");
-      currentText.textContent = "页面未加载插件脚本";
-      toggleBtn.textContent = "开启";
+      currentText.textContent = "页面未加载插件脚本\nContent script not loaded";
+      toggleBtn.textContent = "开启\nEnable";
       toggleBtn.className = "toggle-btn off";
       return;
     }
@@ -38,15 +38,15 @@ async function refreshStatus() {
     if (response.active) {
       statusValue.textContent = `${response.currentIndex} / ${response.totalLines}`;
       statusValue.classList.remove("inactive");
-      currentText.textContent = response.currentText || "(空行)";
-      toggleBtn.textContent = "关闭";
+      currentText.textContent = response.currentText || "(空行)\n(empty)";
+      toggleBtn.textContent = "关闭\nDisable";
       toggleBtn.className = "toggle-btn on";
       gotoInput.max = response.totalLines;
     } else {
       statusValue.textContent = `- / ${response.totalLines || "-"}`;
       statusValue.classList.add("inactive");
-      currentText.textContent = "按 Ctrl+Shift+L 开启";
-      toggleBtn.textContent = "开启";
+      currentText.textContent = "按 Ctrl+Shift+L 开启\nPress Ctrl+Shift+L to start";
+      toggleBtn.textContent = "开启\nEnable";
       toggleBtn.className = "toggle-btn off";
     }
   });

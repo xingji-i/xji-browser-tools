@@ -4,47 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="popup.css">
-  <title>Auto Scroll</title>
+  <title>自动翻页 Auto Scroll</title>
 </head>
 <body>
   <div class="container">
     <!-- Title -->
     <header class="header">
       <div class="logo">↕</div>
-      <h1>Auto Scroll</h1>
+      <h1>自动翻页 <small class="en">Auto Scroll</small></h1>
     </header>
 
     <!-- Status -->
     <div class="status-bar" id="statusBar">
       <span class="status-dot" id="statusDot"></span>
-      <span class="status-text" id="statusText">Stopped</span>
+      <span class="status-text" id="statusText">已停止<small class="en">Stopped</small></span>
     </div>
 
     <!-- Main toggle -->
     <button class="btn-main" id="btnToggle">
       <span class="btn-icon" id="btnIcon">▶</span>
-      <span class="btn-label" id="btnLabel">Start Scrolling</span>
+      <span class="btn-label" id="btnLabel">开始滚动<small class="en">Start Scrolling</small></span>
     </button>
 
     <!-- Direction -->
     <div class="control-group">
-      <label class="control-label">Direction</label>
+      <label class="control-label">滚动方向 <small class="en">Direction</small></label>
       <div class="direction-toggle">
-        <button class="dir-btn active" id="btnDown" data-dir="down">↓ Down</button>
-        <button class="dir-btn" id="btnUp" data-dir="up">↑ Up</button>
+        <button class="dir-btn active" id="btnDown" data-dir="down">↓ 向下 <small class="en">Down</small></button>
+        <button class="dir-btn" id="btnUp" data-dir="up">↑ 向上 <small class="en">Up</small></button>
       </div>
     </div>
 
     <!-- Speed -->
     <div class="control-group">
       <label class="control-label">
-        Speed
+        滚动速度 <small class="en">Speed</small>
         <span class="speed-value" id="speedValue">0.4</span>
       </label>
       <div class="slider-row">
-        <span class="slider-hint">Slow</span>
+        <span class="slider-hint">慢 <small class="en">Slow</small></span>
         <input type="range" id="speedSlider" min="1" max="10" value="3" step="1">
-        <span class="slider-hint">Fast</span>
+        <span class="slider-hint">快 <small class="en">Fast</small></span>
       </div>
     </div>
   </div>

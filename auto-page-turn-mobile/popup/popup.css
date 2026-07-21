@@ -237,3 +237,8 @@ input[type="range"]::-moz-range-thumb {
   background: #fff;
   cursor: pointer;
 }
+
+/* ─── Bilingual 双语 ─────────────────────── */
+.en { font-size: 9px; color: #bbb; font-weight: 400; line-height: 1.2; display: block; margin-top: 1px; }
+.status-text { white-space: pre-line; }
+.btn-label { white-space: pre-line; text-align: center; }

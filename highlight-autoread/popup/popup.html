@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="popup.css">
-  <title>高亮跟读</title>
+  <title>高亮跟读 Highlight AutoRead</title>
 </head>
 <body>
   <!-- 标题栏 -->
@@ -14,13 +14,13 @@
         <path d="M18 14l3 3-3 3" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </div>
-    <span class="header-title">高亮跟读</span>
+    <span class="header-title">高亮跟读 <small class="en">Highlight AutoRead</small></span>
   </header>
 
   <!-- 状态栏 -->
   <section class="status-bar">
     <span class="status-dot" id="statusDot"></span>
-    <span class="status-label" id="statusLabel">已停止</span>
+    <span class="status-label" id="statusLabel">已停止<small class="en">Stopped</small></span>
     <span class="status-line" id="statusLine"></span>
   </section>
 
@@ -30,50 +30,50 @@
   <!-- 自动跟读按钮 -->
   <button class="btn-main" id="btnAutoRead">
     <span class="btn-icon" id="btnAutoIcon">▶</span>
-    <span id="btnAutoText">开始跟读</span>
+    <span id="btnAutoText">开始跟读 <small class="en">Start Auto-Read</small></span>
   </button>
 
   <!-- 速度控制 -->
   <section class="ctrl-row">
-    <label class="ctrl-label">速度</label>
+    <label class="ctrl-label">速度 <small class="en">Speed</small></label>
     <div class="speed-slider">
-      <span class="speed-tag">慢</span>
+      <span class="speed-tag">慢<small class="en">Slow</small></span>
       <input type="range" id="speedSlider" min="1" max="10" value="3" step="1">
-      <span class="speed-tag">快</span>
+      <span class="speed-tag">快<small class="en">Fast</small></span>
     </div>
     <span class="speed-badge" id="speedBadge">5s</span>
   </section>
 
   <!-- 行导航 -->
   <section class="ctrl-row nav-row">
-    <button class="btn-small" id="btnPrev" title="上一行 (Ctrl+↑)">◀</button>
+    <button class="btn-small" id="btnPrev" title="上一行 Prev (Ctrl+↑)">◀</button>
     <div class="line-display">
       <span id="lineDisplay">- / -</span>
     </div>
-    <button class="btn-small" id="btnNext" title="下一行 (Ctrl+↓)">▶</button>
+    <button class="btn-small" id="btnNext" title="下一行 Next (Ctrl+↓)">▶</button>
   </section>
 
   <!-- 当前行预览 -->
-  <div class="text-preview" id="textPreview">等待开始…</div>
+  <div class="text-preview" id="textPreview">等待开始… <small class="en">Waiting…</small></div>
 
   <!-- 跳转到行 -->
   <section class="ctrl-row">
-    <input type="number" id="gotoInput" min="1" placeholder="行号" class="goto-input">
-    <button class="btn-small btn-goto" id="btnGoto">跳转</button>
+    <input type="number" id="gotoInput" min="1" placeholder="行号 / #" class="goto-input">
+    <button class="btn-small btn-goto" id="btnGoto">跳转<small class="en">Go</small></button>
     <div class="spacer"></div>
-    <button class="btn-small btn-highlight" id="btnHighlight" title="仅高亮（不自动滚动）">
-      ◆ 高亮
+    <button class="btn-small btn-highlight" id="btnHighlight" title="仅高亮 Highlight Only">
+      ◆ 高亮 <small class="en">Highlight</small>
     </button>
   </section>
 
   <!-- 颜色设置 -->
   <section class="color-row">
     <label class="color-item">
-      <span>背景色</span>
+      <span>背景色 <small class="en">BG</small></span>
       <input type="color" id="bgColor" value="#fff3b0">
     </label>
     <label class="color-item">
-      <span>边框色</span>
+      <span>边框色 <small class="en">Outline</small></span>
       <input type="color" id="outlineColor" value="#ffb300">
     </label>
   </section>
@@ -82,15 +82,15 @@
   <footer class="shortcuts">
     <div class="shortcut-item">
       <kbd>Ctrl</kbd>+<kbd>Space</kbd>
-      <span>开始/暂停跟读</span>
+      <span>开始/暂停跟读 <small class="en">Start/Pause</small></span>
     </div>
     <div class="shortcut-item">
       <kbd>Ctrl</kbd>+<kbd>↓</kbd>/<kbd>↑</kbd>
-      <span>下一行/上一行</span>
+      <span>下一行/上一行 <small class="en">Next/Prev</small></span>
     </div>
     <div class="shortcut-item">
       <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>
-      <span>开关高亮</span>
+      <span>开关高亮 <small class="en">Toggle Highlight</small></span>
     </div>
   </footer>
 

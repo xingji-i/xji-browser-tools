@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, { type: 'START_TRANSLATE' }, (response) => {
           if (chrome.runtime.lastError) {
-            showStatus('无法连接页面，请刷新后重试', 'error');
+            showStatus('无法连接页面，请刷新后重试\nCannot connect, please refresh', 'error');
           } else {
             window.close(); // 关闭 popup
           }
@@ -34,9 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, { type: 'SCAN_PAGE' }, (response) => {
           if (chrome.runtime.lastError) {
-            showStatus('无法连接页面，请刷新后重试', 'error');
+            showStatus('无法连接页面，请刷新后重试\nCannot connect, please refresh', 'error');
           } else if (response) {
-            showStatus(`发现 ${response.blockCount} 段内容 (${response.detectedLang})`, 'success');
+            showStatus(`发现 ${response.blockCount} 段内容 (${response.detectedLang})\nFound ${response.blockCount} blocks (${response.detectedLang})`, 'success');
           }
         });
       }
@@ -57,11 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(['azureApiKey', 'azureRegion'], (settings) => {
       if (settings.azureApiKey) {
         const region = settings.azureRegion || 'global';
-        apiStatusText.textContent = `Azure Translator 已配置 (${region})`;
+        apiStatusText.textContent = `Azure Translator 已配置 (${region})\nConfigured (${region})`;
         apiStatusCard.classList.add('success');
         apiStatusCard.classList.remove('error');
       } else {
-        apiStatusText.textContent = '未配置 API Key - 请点击设置';
+        apiStatusText.textContent = '未配置 API Key - 请点击设置\nAPI Key not set - click Settings';
         apiStatusCard.classList.add('error');
         apiStatusCard.classList.remove('success');
       }

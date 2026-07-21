@@ -49,7 +49,7 @@
 
     const fab = document.createElement('button');
     fab.id = 'autotranslate-fab';
-    fab.title = 'AutoTranslate (Alt+T)';
+    fab.title = 'AutoTranslate 双语翻译 (Alt+T)';
     fab.innerHTML = `
       <svg viewBox="0 0 24 24">
         <path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2l1 3"/>
