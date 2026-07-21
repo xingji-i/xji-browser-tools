@@ -4,7 +4,6 @@
  */
 
 chrome.commands.onCommand.addListener((command) => {
-  // 转发命令给当前活跃 tab 的 content script
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (!tabs[0]) return;
     chrome.tabs.sendMessage(

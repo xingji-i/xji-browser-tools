@@ -27,6 +27,11 @@
 
   const CLASS_NAME = "dlh-highlight";
 
+  /* ─── 位置记忆（同页面开关恢复上次位置） ─── */
+  let savedIndex = -1;         // 关闭时保存的行索引
+  let savedText = "";          // 关闭时保存的行文本（用于 DOM 变化后重新定位）
+  let savedUrl = "";           // 关闭时的页面 URL
+
   /* ─── 行选择器 ─── */
   // 按优先级排列，匹配到第一组非空结果即停止
   const LINE_SELECTORS = [
@@ -162,11 +167,40 @@
     active = !active;
     if (active) {
       lineElements = collectLines();
-      if (lineElements.length > 0 && currentIndex < 0) {
-        currentIndex = 0;
+
+      // 尝试恢复上次在同一页面关闭时的位置
+      let restored = false;
+      if (savedUrl === location.href && lineElements.length > 0) {
+        // 优先按文本内容匹配（DOM 可能已变化）
+        if (savedText) {
+          const matchIdx = lineElements.findIndex(
+            (el) => el.textContent.trim().slice(0, 80) === savedText
+          );
+          if (matchIdx >= 0) {
+            currentIndex = matchIdx;
+            restored = true;
+          }
+        }
+        // 文本匹配失败，回退到索引
+        if (!restored && savedIndex >= 0 && savedIndex < lineElements.length) {
+          currentIndex = savedIndex;
+          restored = true;
+        }
       }
+      // 全新页面或无记忆，从头开始
+      if (!restored) {
+        currentIndex = lineElements.length > 0 ? 0 : -1;
+      }
+
       applyHighlight();
+      console.log(`[DLH] 已开启，共 ${lineElements.length} 行${restored ? "（已恢复上次位置）" : ""}`);
     } else {
+      // 关闭前保存当前位置
+      if (currentIndex >= 0 && currentIndex < lineElements.length) {
+        savedIndex = currentIndex;
+        savedText = lineElements[currentIndex].textContent.trim().slice(0, 80);
+        savedUrl = location.href;
+      }
       clearHighlight();
       currentIndex = -1;
     }
@@ -226,13 +260,6 @@
       e.preventDefault();
       toggle();
     }
-    // Escape → 关闭高亮
-    if (e.key === "Escape") {
-      if (active) {
-        e.preventDefault();
-        toggle();
-      }
-    }
   }, true); // capture phase 确保在页面 JS 之前拦截
 
   /* ─── 状态查询 ─── */
@@ -284,5 +311,5 @@
   });
 
   /* ─── 初始状态通知 ─── */
-  console.log("[Doc Line Highlight] 已加载，按 Ctrl+Shift+L 开启逐行高亮");
+  console.log("[Doc Line Highlight] 已加载 — Ctrl+Shift+L 开启高亮，同页面开关自动恢复位置");
 })();
