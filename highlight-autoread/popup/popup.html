@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <title>高亮跟读</title>
+</head>
+<body>
+  <!-- 标题栏 -->
+  <header class="header">
+    <div class="header-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 6h16M4 10h16M4 14h10M4 18h7"/>
+        <path d="M18 14l3 3-3 3" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <span class="header-title">高亮跟读</span>
+  </header>
+
+  <!-- 状态栏 -->
+  <section class="status-bar">
+    <span class="status-dot" id="statusDot"></span>
+    <span class="status-label" id="statusLabel">已停止</span>
+    <span class="status-line" id="statusLine"></span>
+  </section>
+
+  <!-- 自动跟读按钮 -->
+  <button class="btn-main" id="btnAutoRead">
+    <span class="btn-icon" id="btnAutoIcon">▶</span>
+    <span id="btnAutoText">开始跟读</span>
+  </button>
+
+  <!-- 速度控制 -->
+  <section class="ctrl-row">
+    <label class="ctrl-label">速度</label>
+    <div class="speed-slider">
+      <span class="speed-tag">慢</span>
+      <input type="range" id="speedSlider" min="1" max="10" value="3" step="1">
+      <span class="speed-tag">快</span>
+    </div>
+    <span class="speed-badge" id="speedBadge">5s</span>
+  </section>
+
+  <!-- 行导航 -->
+  <section class="ctrl-row nav-row">
+    <button class="btn-small" id="btnPrev" title="上一行 (Ctrl+↑)">◀</button>
+    <div class="line-display">
+      <span id="lineDisplay">- / -</span>
+    </div>
+    <button class="btn-small" id="btnNext" title="下一行 (Ctrl+↓)">▶</button>
+  </section>
+
+  <!-- 当前行预览 -->
+  <div class="text-preview" id="textPreview">等待开始…</div>
+
+  <!-- 跳转到行 -->
+  <section class="ctrl-row">
+    <input type="number" id="gotoInput" min="1" placeholder="行号" class="goto-input">
+    <button class="btn-small btn-goto" id="btnGoto">跳转</button>
+    <div class="spacer"></div>
+    <button class="btn-small btn-highlight" id="btnHighlight" title="仅高亮（不自动滚动）">
+      ◆ 高亮
+    </button>
+  </section>
+
+  <!-- 颜色设置 -->
+  <section class="color-row">
+    <label class="color-item">
+      <span>背景色</span>
+      <input type="color" id="bgColor" value="#fff3b0">
+    </label>
+    <label class="color-item">
+      <span>边框色</span>
+      <input type="color" id="outlineColor" value="#ffb300">
+    </label>
+  </section>
+
+  <!-- 快捷键参考 -->
+  <footer class="shortcuts">
+    <div class="shortcut-item">
+      <kbd>Ctrl</kbd>+<kbd>Space</kbd>
+      <span>开始/暂停跟读</span>
+    </div>
+    <div class="shortcut-item">
+      <kbd>Ctrl</kbd>+<kbd>↓</kbd>/<kbd>↑</kbd>
+      <span>下一行/上一行</span>
+    </div>
+    <div class="shortcut-item">
+      <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd>
+      <span>开关高亮</span>
+    </div>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

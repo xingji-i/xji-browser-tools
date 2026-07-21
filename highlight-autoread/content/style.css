@@ -1,0 +1,106 @@
+/* ===== Highlight AutoRead - 页面注入样式 ===== */
+
+/* 高亮行 */
+.har-highlight {
+  background-color: var(--har-bg, #fff3b0) !important;
+  outline: 2px solid var(--har-outline, #ffb300) !important;
+  outline-offset: 2px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease, outline-color 0.2s ease;
+  animation: har-fadein 0.25s ease;
+}
+
+/* 高亮淡入动画 */
+@keyframes har-fadein {
+  from {
+    background-color: transparent;
+    outline-color: transparent;
+  }
+  to {
+    background-color: var(--har-bg, #fff3b0);
+    outline-color: var(--har-outline, #ffb300);
+  }
+}
+
+/* 高亮行内的 code/pre 元素继承背景 */
+.har-highlight code,
+.har-highlight pre {
+  background-color: var(--har-bg, #fff3b0) !important;
+}
+
+/* PDF.js 文字层适配 */
+.textLayer .har-highlight {
+  outline-offset: 0;
+  border-radius: 1px;
+}
+
+/* ===== 页面右下角浮动指示器 ===== */
+#har-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #666;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease;
+}
+
+#har-indicator:hover {
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+/* 自动跟读中 - 琥珀色主题 */
+#har-indicator.har-ind-active {
+  background: rgba(255, 179, 0, 0.15);
+  border-color: rgba(255, 179, 0, 0.4);
+  color: #8a6d00;
+}
+
+#har-indicator.har-ind-active .har-ind-arrow {
+  color: #e6a200;
+  animation: har-pulse 2s ease-in-out infinite;
+}
+
+/* 仅高亮模式 */
+#har-indicator.har-ind-highlight-only {
+  background: rgba(255, 179, 0, 0.08);
+  border-color: rgba(255, 179, 0, 0.25);
+  color: #8a7e6b;
+}
+
+.har-ind-arrow {
+  font-size: 11px;
+  width: 14px;
+  text-align: center;
+}
+
+.har-ind-text {
+  font-weight: 500;
+}
+
+.har-ind-info {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* 播放中脉冲动画 */
+@keyframes har-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
