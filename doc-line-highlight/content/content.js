@@ -32,6 +32,15 @@
   let savedText = "";          // 关闭时保存的行文本（用于 DOM 变化后重新定位）
   let savedUrl = "";           // 关闭时的页面 URL
 
+  /* ─── toggle 防抖（keydown + message 双路径可能同时触发） ─── */
+  let lastToggleTime = 0;
+  function debouncedToggle() {
+    const now = Date.now();
+    if (now - lastToggleTime < 200) return;
+    lastToggleTime = now;
+    toggle();
+  }
+
   /* ─── 行选择器 ─── */
   // 按优先级排列，匹配到第一组非空结果即停止
   const LINE_SELECTORS = [
@@ -59,6 +68,8 @@
     ".article-content p",
     // 代码块
     "pre code .code-line",
+    // data-lsp 标注元素
+    "[data-lsp]",
     // 通用段落（兜底）
     "p",
     "li",
@@ -213,7 +224,7 @@
     if (msg.type === "DLH_COMMAND") {
       if (msg.command === "next-line") goToNextLine();
       else if (msg.command === "prev-line") goToPrevLine();
-      else if (msg.command === "toggle-highlight") toggle();
+      else if (msg.command === "toggle-highlight") debouncedToggle();
       sendResponse({ ok: true });
     }
     if (msg.type === "DLH_GET_STATUS") {
@@ -243,6 +254,13 @@
 
   // content script 层 keydown 兜底（某些页面 manifest commands 不触发）
   document.addEventListener("keydown", (e) => {
+    // Ctrl + Shift + L → 切换（始终响应，不受 active 状态限制）
+    if (e.ctrlKey && e.shiftKey && (e.key === "L" || e.code === "KeyL")) {
+      e.preventDefault();
+      debouncedToggle();
+      return;
+    }
+
     if (!active) return;
 
     // Ctrl + ↓
@@ -254,11 +272,6 @@
     if (e.ctrlKey && (e.key === "ArrowUp" || e.code === "ArrowUp")) {
       e.preventDefault();
       goToPrevLine();
-    }
-    // Ctrl + Shift + L → 切换
-    if (e.ctrlKey && e.shiftKey && (e.key === "L" || e.code === "KeyL")) {
-      e.preventDefault();
-      toggle();
     }
   }, true); // capture phase 确保在页面 JS 之前拦截
 
