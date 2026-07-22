@@ -68,8 +68,8 @@
     ".article-content p",
     // 代码块
     "pre code .code-line",
-    // data-lsp 标注元素
-    "[data-lsp]",
+    "pre div.line",
+    "div.line",
     // 通用段落（兜底）
     "p",
     "li",
