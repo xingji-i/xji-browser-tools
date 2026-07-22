@@ -1,104 +1,81 @@
-# Doc Line Highlight — Line-by-Line Highlighted Reading
+# Doc Line Highlight - Document Line-by-Line Highlighting
 
-> A Manifest V3 Chrome extension that enables precise, keyboard-driven line-by-line navigation with visual highlighting across a wide range of web content types.
+**[中文](README.md)** | English
+
+A Manifest V3 browser extension for line-by-line highlighted reading of web page text. Navigate between text lines using keyboard shortcuts — the current line is highlighted with a custom-color background and outline, and automatically scrolled into the center of the viewport. Ideal for reading web articles, technical documentation, Markdown pages, PDF.js-rendered PDFs, GitHub code, and more.
 
 ---
 
 ## Table of Contents
 
-- [Features](#features)
+- [Core Features](#core-features)
 - [Supported Content Types](#supported-content-types)
 - [Installation](#installation)
+- [Usage](#usage)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Architecture](#architecture)
-- [Technical Notes](#technical-notes)
-- [Troubleshooting](#troubleshooting)
+- [Technical Details](#technical-details)
+- [Project Structure](#project-structure)
 - [License](#license)
 
 ---
 
-## Features
+## Core Features
 
-### Keyboard-Driven Line Navigation
-
-Move through a document one line at a time using `Ctrl + Down` and `Ctrl + Up`. The currently focused line is visually highlighted, and the page smoothly scrolls to keep it centered in the viewport. No mouse required.
-
-### Extensive Selector Coverage (30+ CSS Selectors)
-
-The content engine ships with over 30 CSS selectors covering the most common document structures on the web:
-
-- **PDF.js** — Mozilla's PDF viewer paragraph spans
-- **Markdown renderers** — GitHub, GitLab, and generic Markdown paragraph elements
-- **GitHub** — README blobs, issue bodies, pull request descriptions, code blocks
-- **Articles** — Standard `<article>`, `<p>`, `<li>`, and semantic HTML5 elements
-- **Code blocks** — `<pre>`, `<code>`, line-numbered code containers
-- **Fallback** — Generic block-level elements when no specific match is found
-
-### DOM-Order Sorting
-
-Matched elements are sorted by their position in the DOM tree (using `compareDocumentPosition`), not by their visual bounding-box coordinates. This ensures a natural reading order that respects the document's logical structure, even when CSS layout (flexbox, grid, floats) reorders elements visually.
-
-### Parent-Child Deduplication
-
-When a parent element and its child both match the selector set, the parent is removed from the navigation list. This prevents the same text from being highlighted twice as you step through the document.
-
-### Popup Control Panel
-
-The extension popup provides a compact control interface:
-
-- **Line counter** — Displays the current line number and total line count (e.g., "42 / 318").
-- **Toggle button** — Enable or disable highlighting without losing your position.
-- **Go-to-line input** — Jump directly to any line number.
-- **Color pickers** — Customize the highlight background color and text color to match your reading preferences or accessibility needs.
-
-### Position Memory
-
-When you navigate away from a page and return, the extension attempts to restore your reading position using a **text-match strategy**: it searches for the exact text content of the previously highlighted line. If the text cannot be found (e.g., the page has changed), it falls back to the **numeric index** of the line within the element list. This two-tier approach provides robust position persistence across sessions.
-
-### SPA Support via MutationObserver
-
-A `MutationObserver` watches for DOM mutations that add or remove navigable elements. This keeps the line list accurate on single-page applications (SPAs) where content loads dynamically without full page reloads — common on sites like GitHub, Gmail, and documentation platforms.
-
-### Dual Shortcut Mechanism
-
-Shortcuts are registered at two levels:
-
-1. **Manifest-declared commands** (`chrome.commands`) — handled by the background service worker and relayed to the active tab.
-2. **In-page keyboard listeners** — content script listens for the same key combinations directly.
-
-This dual approach ensures shortcuts work reliably regardless of focus state or page context.
-
-### Skip Empty Lines
-
-Elements that contain only whitespace, are visually hidden, or have zero dimensions are automatically excluded from the navigation list. You will never land on a blank line.
-
-### Auto-Scroll to Center
-
-Each time a new line is highlighted, the page scrolls so that the line is positioned at the vertical center of the viewport. This provides a stable, comfortable reading rhythm — your eyes do not have to chase the highlight up and down the screen.
+- **Line-by-line highlight navigation** - `Ctrl+Down` / `Ctrl+Up` to move between text lines, with the current line highlighted and auto-scrolled to center (`scrollIntoView` smooth)
+- **Broad text recognition** - 30+ CSS selectors covering mainstream reading scenarios: PDF.js text layers, Markdown renderers, GitHub code views, generic article containers, code blocks, tables, lists, etc.
+- **DOM-order sorting** - Uses `compareDocumentPosition` to sort elements in document order, ensuring reading order matches visual order
+- **Parent-child deduplication** - When both a parent and child element are matched, the child is automatically removed to avoid duplicate highlights
+- **Popup control panel** - Displays current line / total lines, current line text preview, line number jump input, and background/outline color pickers
+- **Position memory** - Saves current line index + text content + page URL to session-level memory on toggle-off; restores via text matching (preferred) or index fallback on toggle-on for the same page
+- **SPA dynamic content support** - MutationObserver watches DOM changes so asynchronously loaded content in single-page apps is automatically recognized
+- **Dual shortcut mechanism** - Manifest commands (globally registered) + content script keydown listener (fallback) ensures reliable response across all page environments
+- **Skip empty lines** - Optional feature to automatically skip lines with no text content
+- **Custom highlight colors** - Background and outline colors are freely adjustable via color pickers, with settings auto-persisted
 
 ---
 
 ## Supported Content Types
 
-| Content Type | Examples |
-|-------------|----------|
-| PDF documents | Files opened in Chrome's PDF.js viewer |
-| Markdown | GitHub/GitLab README, rendered `.md` files |
-| Source code | GitHub file viewer, Pastebin, code blogs |
-| Articles & blog posts | Medium, Substack, WordPress, news sites |
-| Documentation | MDN, ReadTheDocs, API reference pages |
-| GitHub | Issues, PR descriptions, wikis, discussion threads |
-| Generic HTML | Any page with block-level text elements |
+| Scenario | Support | Matching Method |
+|----------|---------|-----------------|
+| Web Markdown (GitHub / Yuque / Obsidian, etc.) | Full | Markdown renderer container selectors |
+| PDF.js-rendered PDFs (online PDF preview) | Full | PDF.js text layer `.textLayer span` |
+| GitHub code files / Diff views | Full | `.js-file-line`, `.blob-code-inner`, etc. |
+| Generic web articles (blogs, wikis, tech docs) | Full | `article`, `main`, `.post-content`, `.article-content`, etc. |
+| Code blocks (Twoslash / generic) | Full | `div.line`, `.code-line` and other code line container selectors |
+| Tables, lists, definition lists | Full | `td`, `dt`, `dd`, `li`, etc. |
+| Generic paragraphs and headings | Full | `p`, `h1`-`h6`, `blockquote` and other fallback selectors |
+| Chrome built-in PDF viewer | Not supported | Sandbox-isolated; use PDF.js preview instead |
+| Local .docx files | Not supported | Must be converted to online preview or HTML first |
 
 ---
 
 ## Installation
 
-1. Clone or download this repository.
-2. Open Chrome and navigate to `chrome://extensions/`.
-3. Enable **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** and select the `doc-line-highlight` directory.
-5. The extension icon appears in the toolbar. Navigate to any web page and press `Ctrl + Down` to begin.
+### Chrome / Edge
+
+1. Open `chrome://extensions` (or `edge://extensions` for Edge)
+2. Enable "Developer mode" in the top-right corner
+3. Click "Load unpacked"
+4. Select the `doc-line-highlight` folder from this project
+
+### Firefox
+
+1. Open `about:debugging#/runtime/this-firefox`
+2. Click "Load Temporary Add-on"
+3. Select the `manifest.json` file in the project
+
+---
+
+## Usage
+
+1. **Enable highlight mode** - Press `Ctrl+Shift+L` on any web page, or click the toolbar icon then click "Enable"
+2. **Navigate lines** - `Ctrl+Down` to jump to the next line, `Ctrl+Up` to jump to the previous line
+3. **Auto-center** - The current line is highlighted while the page auto-scrolls to center it
+4. **Line number jump** - Enter a line number in the Popup panel to jump directly to that line
+5. **Customize colors** - Adjust highlight background and outline colors via color pickers in the Popup panel
+6. **Position restore** - When re-opening the same page, the last position is automatically restored
 
 ---
 
@@ -106,9 +83,9 @@ Each time a new line is highlighted, the page scrolls so that the line is positi
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl + Down` | Move to the next line and highlight it |
-| `Ctrl + Up` | Move to the previous line and highlight it |
-| `Ctrl + Shift + L` | Toggle highlighting on or off |
+| `Ctrl + Down` | Highlight next line |
+| `Ctrl + Up` | Highlight previous line |
+| `Ctrl + Shift + L` | Toggle highlight mode on/off |
 
 Shortcuts can be customized at `chrome://extensions/shortcuts`.
 
@@ -117,107 +94,81 @@ Shortcuts can be customized at `chrome://extensions/shortcuts`.
 ## Architecture
 
 ```
-doc-line-highlight/
-├── manifest.json              # Manifest V3 configuration
-├── background.js              # Service worker — relays shortcut commands to content script
-├── content.js                 # Core engine — line detection, highlighting, navigation, position memory
-├── style.css                  # Highlight styles (.dlh-highlight class with CSS custom properties)
-├── popup/
-│   ├── popup.html             # Control panel UI
-│   ├── popup.js               # Popup logic (line counter, go-to, color pickers, toggle)
-│   └── popup.css
-└── icons/
+Manifest V3 (Chrome Extension)
+├── Background Service Worker  — Forwards manifest commands to content script
+├── Content Scripts
+│   ├── content.js             — Core engine (line collection, highlighting, shortcuts, position memory)
+│   └── style.css              — Highlight styles (.dlh-highlight class + CSS variable-driven colors)
+└── Popup                      — Control panel (status display, line jump, color settings)
 ```
-
-### Component Responsibilities
-
-**`background.js`** — Listens for `chrome.commands.onCommand` events and sends a message to the active tab's content script. This ensures that manifest-declared shortcuts are forwarded even when the page does not have focus on the content script's event listeners.
-
-**`content.js`** — The main engine. Responsibilities include:
-
-- Querying the DOM with the 30+ selector set.
-- Sorting elements by DOM order.
-- Deduplicating parent-child overlaps.
-- Filtering out empty and invisible elements.
-- Managing the highlight state (current index, active/inactive).
-- Handling keyboard events for line navigation.
-- Persisting and restoring reading position.
-- Observing DOM mutations for SPA support.
-
-**`style.css`** — Defines the `.dlh-highlight` class and its associated CSS custom properties (`--dlh-bg`, `--dlh-color`). Using custom properties allows the popup's color pickers to update the highlight appearance in real time by writing new values to the element's style.
-
-**`popup/`** — A lightweight control panel that communicates with the content script via `chrome.tabs.sendMessage` to read the current state and send commands.
 
 ### Permissions
 
 | Permission | Purpose |
-|-----------|---------|
-| `activeTab` | Access the current tab's DOM for line detection and highlighting |
-| `storage` | Persist settings (colors, position memory) and user preferences |
+|------------|---------|
+| `activeTab` | Access the content of the active tab |
+| `storage` | Store user settings (highlight colors, etc.) |
 
 ---
 
-## Technical Notes
+## Technical Details
 
-### Why DOM-Order Sort Instead of Visual Sort?
+### Line Collection Algorithm
 
-Visual sort (comparing `getBoundingClientRect().top`) is tempting but fragile. It breaks on:
+1. Query all potential text elements using 30+ CSS selectors via `querySelectorAll`
+2. Deduplicate results with a `Set` (prevents the same element from being matched by multiple selectors)
+3. Sort by `compareDocumentPosition` to ensure reading order matches document order
+4. **Parent-child dedup**: traverse the sorted list and remove child elements when both parent and child are present
+5. Filter out empty text and invisible elements to avoid highlighting content-less lines
 
-- Multi-column layouts where the second column's first paragraph is visually below the first column's last paragraph, but should be read next in DOM order.
-- Sticky or fixed elements that appear visually inline but are positioned elsewhere in the DOM.
-- Pages that reorder elements with CSS `order` or `flex-direction: row-reverse`.
+### Dual Shortcut Mechanism
 
-DOM-order sort (`Node.compareDocumentPosition`) is deterministic, fast, and aligns with the author's intended reading sequence in the vast majority of cases.
+- **Manifest commands** - Globally registered commands in `manifest.json`, dispatched by the browser with higher priority
+- **Content keydown listener** - Direct keyboard event listener in the content script as a fallback, ensuring response even when commands fail on certain pages (e.g., PDF.js)
 
-### Highlight Rendering
+### Position Memory
 
-The highlight is applied by adding the `.dlh-highlight` CSS class to the target element, rather than wrapping text in inline `<span>` elements. This approach:
+- On toggle-off, saves `current line index + current line text + page URL` to session-level memory variables
+- On toggle-on for the same page, restores position via text content matching (precise), falling back to index-based positioning (approximate) if text matching fails
+- Memory is automatically cleared when the page is closed or the browser is restarted
 
-- Preserves the original DOM structure (no tree mutations that could break page scripts).
-- Avoids conflicts with selection ranges and copy-paste.
-- Is trivially reversible (remove the class to un-highlight).
+### Dynamic Content Adaptation
 
-### Position Memory Strategy
+- Uses `MutationObserver` to watch the DOM tree for changes
+- Automatically re-collects the line list when new or removed text elements are detected
+- Also triggers a full line list refresh every 10 navigation operations
 
-```
-On page unload:
-  1. Read currentLine.textContent → store as `savedText`
-  2. Read currentLine index in element list → store as `savedIndex`
+### Styling Approach
 
-On page load:
-  1. Build element list
-  2. Search list for element with textContent === savedText
-  3. If found → restore to that element
-  4. Else → restore to element at savedIndex (clamped to list bounds)
-  5. Else → start at index 0
-```
-
-### CSS Custom Properties for Theming
-
-The highlight colors are driven by CSS custom properties rather than hardcoded values:
-
-```css
-.dlh-highlight {
-  background-color: var(--dlh-bg, #fff176);
-  color: var(--dlh-color, inherit);
-}
-```
-
-The content script sets these properties on the document root, and the popup updates them in real time when the user picks new colors. This decouples styling from logic and avoids repeated DOM writes to every highlighted element.
+- Highlighting is implemented by adding a `.dlh-highlight` CSS class
+- Colors are controlled by CSS custom properties `--dlh-bg` (background) and `--dlh-outline` (outline)
+- Color changes from the Popup panel directly update CSS variable values — no stylesheet reload needed
 
 ---
 
-## Troubleshooting
+## Project Structure
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `Ctrl+Down` does nothing on a page | No matching elements found | The page may use an unusual structure; check the browser console for the element count logged by the extension |
-| Highlight jumps to wrong position after restore | Page content changed between visits | Text-match failed and index fallback landed on a different element; re-navigate manually |
-| Shortcuts conflict with browser/OS shortcuts | System-level key bindings take priority | Remap the extension shortcuts at `chrome://extensions/shortcuts` |
-| Highlight not visible on dark pages | Default highlight color blends with background | Change the highlight background color via the popup color picker |
+```
+doc-line-highlight/
+├── manifest.json              # Extension configuration (Manifest V3)
+├── background/
+│   └── background.js          # Background service (commands forwarding relay)
+├── content/
+│   ├── content.js             # Core engine (line collection + highlighting + shortcuts + position memory)
+│   └── style.css              # Highlight styles (CSS variable-driven)
+├── popup/
+│   ├── popup.html             # Control panel UI
+│   └── popup.js               # Control panel logic
+├── icons/
+│   ├── icon16.png
+│   ├── icon48.png
+│   └── icon128.png
+├── README.md                  # Chinese documentation
+└── README_EN.md               # English documentation
+```
 
 ---
 
 ## License
 
-This project is provided as-is for personal and educational use. See the [LICENSE](../LICENSE) file in the repository root for details.
+MIT License
