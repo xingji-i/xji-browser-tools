@@ -86,6 +86,7 @@ const container    = document.querySelector(".container");
 // ─── 状态缓存 ───────────────────────────────────────────────
 let state = {
   isScrolling: false,
+  userPaused: false,  // 用户手动滚动时自动滚动暂时让位
   speed: 0.4,       // 内部实际速度（px/帧）
   direction: "down",
   smooth: true,
@@ -106,7 +107,11 @@ function updateUI() {
     btnLabel.textContent = "停止滚动\nStop Scrolling";
     statusDot.classList.add("active");
     statusText.classList.add("active");
-    statusText.textContent = state.direction === "down" ? "向下滚动中…\nScrolling down…" : "向上滚动中…\nScrolling up…";
+    if (state.userPaused) {
+      statusText.textContent = "手动滚动中，已暂停\nPaused for manual scrolling";
+    } else {
+      statusText.textContent = state.direction === "down" ? "向下滚动中…\nScrolling down…" : "向上滚动中…\nScrolling up…";
+    }
     // 收起模式：暂停图标
     btnMiniToggle.classList.add("running");
     btnMiniToggle.textContent = "⏸";
@@ -162,6 +167,7 @@ async function initState() {
   const live = await sendToContent({ action: "getState" });
   if (live) {
     state.isScrolling = live.isScrolling;
+    state.userPaused = !!live.userPaused;
     state.speed = live.speed;
     state.direction = live.direction;
     state.smooth = live.smooth;

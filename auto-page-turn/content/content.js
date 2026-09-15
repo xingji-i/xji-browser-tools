@@ -19,6 +19,15 @@
   let idealScrollY = 0;    // 浮点理想滚动位置，消除整数步进抖动
   let lastFrameTime = 0;   // 上一帧时间戳，用于帧率无关速度计算
 
+  // ─── 用户交互让位（手动滚动优先） ──────────────────────────
+  let userPaused = false;    // 用户正在手动滚动，自动滚动暂时让位
+  let resumeTimer = null;    // 恢复倒计时定时器
+  let resumeAt = 0;          // 计划恢复的时刻（毫秒时间戳）
+  let lastCountdown = -1;    // 上次显示的倒计时秒数
+  let rampStart = 0;         // 恢复后速度爬坡的起始时间戳
+  const RESUME_DELAY = 500; // 停止交互后多少毫秒恢复自动滚动
+  const RAMP_DURATION = 500; // 恢复后速度从 0 爬升到全速的时长
+
   // 速度档位（与 popup.js 的 SPEED_MAP 保持一致）
   const SPEED_STEPS = [0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.4, 1.8, 2.4, 3.0];
 
@@ -94,6 +103,21 @@
   function scrollStep(timestamp) {
     if (!isScrolling) return;
 
+    // 用户手动滚动期间完全让位：不执行任何 scrollTo，
+    // 只跟随用户位置并在指示器上显示恢复倒计时
+    if (userPaused) {
+      idealScrollY = window.scrollY;
+      const remain = Math.max(0, Math.ceil((resumeAt - Date.now()) / 1000));
+      if (remain !== lastCountdown) {
+        lastCountdown = remain;
+        textSpan.textContent = remain > 0
+          ? `手动滚动已暂停 · ${remain}s 后恢复`
+          : "手动滚动已暂停";
+      }
+      animFrameId = requestAnimationFrame(scrollStep);
+      return;
+    }
+
     // 首帧初始化时间戳
     if (!lastFrameTime) {
       lastFrameTime = timestamp;
@@ -105,8 +129,19 @@
     const dt = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
     lastFrameTime = timestamp;
 
+    // 恢复后前 RAMP_DURATION 内速度从 0 平滑爬升到全速，避免突然弹走
+    let rampFactor = 1;
+    if (rampStart) {
+      const elapsed = timestamp - rampStart;
+      if (elapsed < RAMP_DURATION) {
+        rampFactor = Math.max(0.05, elapsed / RAMP_DURATION);
+      } else {
+        rampStart = 0; // 爬坡结束
+      }
+    }
+
     // 帧率无关：speed(px/frame) × 60 = px/s，再乘以 dt 得到本帧位移
-    const delta = speed * 60 * dt;
+    const delta = speed * 60 * dt * rampFactor;
 
     // 检测用户手动滚动（非程序触发的 scrollY 变化）
     const expectedDiff = idealScrollY - window.scrollY;
@@ -144,6 +179,8 @@
   function startScroll() {
     if (isScrolling) return;
     isScrolling = true;
+    userPaused = false;
+    rampStart = 0;
     idealScrollY = window.scrollY;  // 从当前位置开始
     lastFrameTime = 0;              // 首帧会初始化时间戳
     animFrameId = requestAnimationFrame(scrollStep);
@@ -152,13 +189,67 @@
 
   function stopScroll() {
     isScrolling = false;
+    userPaused = false;
+    if (resumeTimer) {
+      clearTimeout(resumeTimer);
+      resumeTimer = null;
+    }
     lastFrameTime = 0;
+    rampStart = 0;
     if (animFrameId) {
       cancelAnimationFrame(animFrameId);
       animFrameId = null;
     }
     updateIndicator();
   }
+
+  // ─── 用户交互让位：检测到手动滚动时暂停，停手后自动恢复 ───
+  function scheduleResume() {
+    if (resumeTimer) clearTimeout(resumeTimer);
+    resumeAt = Date.now() + RESUME_DELAY;
+    lastCountdown = -1;
+    resumeTimer = setTimeout(() => {
+      resumeTimer = null;
+      userPaused = false;
+      if (isScrolling) {
+        // 从用户当前停留的位置无缝接续，并做速度爬坡
+        idealScrollY = window.scrollY;
+        lastFrameTime = 0;
+        rampStart = performance.now();
+        updateIndicator();
+      }
+    }, RESUME_DELAY);
+  }
+
+  function pauseForUser() {
+    if (!isScrolling) return;
+    if (!userPaused) {
+      userPaused = true;
+      updateIndicator();
+    }
+    // 交互持续期间不断刷新倒计时
+    scheduleResume();
+  }
+
+  // ─── 用户滚动意图检测（滚轮 / 触摸 / 拖拽滚动条 / 翻页键） ──
+  // 全部使用 capture + passive：不拦截、不阻塞用户操作
+  window.addEventListener("wheel", pauseForUser, { capture: true, passive: true });
+  window.addEventListener("touchstart", pauseForUser, { capture: true, passive: true });
+  window.addEventListener("touchmove", pauseForUser, { capture: true, passive: true });
+  window.addEventListener("mousedown", (e) => {
+    // 点在视口右/下边缘 16px 内视为拖拽滚动条
+    const onVBar = e.clientX >= document.documentElement.clientWidth - 16;
+    const onHBar = e.clientY >= document.documentElement.clientHeight - 16;
+    if (onVBar || onHBar) pauseForUser();
+  }, { capture: true, passive: true });
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+    const scrollKeys = ["PageUp", "PageDown", "Home", "End", "Space", "ArrowUp", "ArrowDown"];
+    if (!scrollKeys.includes(e.code)) return;
+    const tag = e.target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || e.target.isContentEditable) return;
+    pauseForUser();
+  }, { capture: true, passive: true });
 
   function toggleScroll() {
     isScrolling ? stopScroll() : startScroll();
@@ -182,8 +273,13 @@
   function updateIndicator() {
     if (isScrolling) {
       indicator.style.display = "flex";
-      arrowSpan.textContent = direction === "down" ? "↓" : "↑";
-      textSpan.textContent = direction === "down" ? "向下滚动中 / Scrolling ↓" : "向上滚动中 / Scrolling ↑";
+      if (userPaused) {
+        arrowSpan.textContent = "⏸";
+        textSpan.textContent = "手动滚动已暂停";
+      } else {
+        arrowSpan.textContent = direction === "down" ? "↓" : "↑";
+        textSpan.textContent = direction === "down" ? "向下滚动中 / Scrolling ↓" : "向上滚动中 / Scrolling ↑";
+      }
       speedSpan.textContent = `×${formatSpeed(speed)}`;
     } else {
       indicator.style.display = "none";
@@ -224,6 +320,7 @@
       case "getState":
         sendResponse({
           isScrolling,
+          userPaused,
           speed,
           direction,
           smooth
