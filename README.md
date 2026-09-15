@@ -23,11 +23,11 @@
 | 扩展名称 | 中文名 | 一句话描述 | 核心特性 |
 |---------|--------|-----------|---------|
 | [auto-page-turn](./auto-page-turn/) | 自动翻页 | 桌面端自动滚动阅读 | rAF 动画引擎、速度控制、键盘快捷键 |
-| [auto-page-turn-android](./auto-page-turn-android/) | 自动翻页 Android 版 | 移动端自动滚动阅读 | 适配 Kiwi/Yandex/Firefox Android |
-| [auto-page-turn-mobile](./auto-page-turn-mobile/) | 自动翻页 iOS 版 | iOS Safari 自动滚动 | Safari MV3 兼容、触控优化 |
-| [auto-translate](./auto-translate/) | 双语对照翻译 | Azure 驱动的智能双语段落对照翻译 | 智能内容提取、Shadow DOM 侧面板、两级缓存 |
+| [auto-page-turn-android](./auto-page-turn-android/) | 自动翻页 Android 版（待优化） | 移动端自动滚动阅读 | 适配 Kiwi/Yandex/Firefox Android |
+| [auto-page-turn-mobile](./auto-page-turn-mobile/) | 自动翻页 iOS 版（待优化） | iOS Safari 自动滚动 | Safari MV3 兼容、触控优化 |
+| [auto-translate](./auto-translate/) | 双语对照翻译（待优化） | Azure 驱动的智能双语段落对照翻译 | 智能内容提取、Shadow DOM 侧面板、两级缓存 |
 | [doc-line-highlight](./doc-line-highlight/) | 文档逐行高亮 | 逐行高亮跳转阅读 | 30+ 选择器、位置记忆、动态内容适配 |
-| [highlight-autoread](./highlight-autoread/) | 高亮跟读 | 高亮 + 自动滚动联动阅读 | 逐行高亮与自动翻页结合 |
+| [highlight-autoread](./highlight-autoread/) | 高亮跟读（待优化） | 高亮 + 自动滚动联动阅读 | 逐行高亮与自动翻页结合 |
 
 ---
 
