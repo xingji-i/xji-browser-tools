@@ -19,6 +19,24 @@
   let idealScrollY = 0;    // 浮点理想滚动位置，消除整数步进抖动
   let lastFrameTime = 0;   // 上一帧时间戳，用于帧率无关速度计算
 
+  // 速度档位（与 popup.js 的 SPEED_MAP 保持一致）
+  const SPEED_STEPS = [0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.4, 1.8, 2.4, 3.0];
+
+  // 按档位加减速：dir=+1 加速，dir=-1 减速
+  function stepSpeed(dir) {
+    // 找到当前速度最接近的档位
+    let idx = 0;
+    let bestDiff = Infinity;
+    for (let i = 0; i < SPEED_STEPS.length; i++) {
+      const diff = Math.abs(SPEED_STEPS[i] - speed);
+      if (diff < bestDiff) { bestDiff = diff; idx = i; }
+    }
+    idx = Math.max(0, Math.min(SPEED_STEPS.length - 1, idx + dir));
+    speed = SPEED_STEPS[idx];
+    updateIndicator();
+    browser.storage.local.set({ scrollSettings: { speed, direction, smooth } });
+  }
+
   // ─── 悬浮指示器 ─────────────────────────────────────────────
   const indicator = document.createElement("div");
   indicator.id = "auto-scroll-indicator";
@@ -193,6 +211,12 @@
         speed = Math.max(0.1, Math.min(3.0, Number(msg.speed) || 0.4));
         updateIndicator();
         break;
+      case "speedUp":
+        stepSpeed(1);
+        break;
+      case "speedDown":
+        stepSpeed(-1);
+        break;
       case "setDirection":
         direction = msg.direction === "up" ? "up" : "down";
         updateIndicator();
@@ -216,7 +240,9 @@
     return false;
   });
 
-  // ─── 页面级键盘快捷键（Ctrl+Space 兜底） ──────────────────────
+  // ─── 页面级键盘快捷键（commands API 的兜底） ─────────────────
+  // Ctrl+Space: 开/关；Ctrl+↑: 加速；Ctrl+↓: 减速
+  // （浏览器 commands 使用 Ctrl+Shift+↑/↓，此处用不带 Shift 的组合避免重复触发）
   document.addEventListener("keydown", (e) => {
     // 忽略输入框内的按键
     const tag = e.target.tagName;
@@ -228,6 +254,16 @@
     if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === "Space" || e.key === " ")) {
       e.preventDefault();
       toggleScroll();
+      return;
+    }
+
+    // Ctrl+↑ / Ctrl+↓: 加速 / 减速
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && e.code === "ArrowUp") {
+      e.preventDefault();
+      stepSpeed(1);
+    } else if (e.ctrlKey && !e.shiftKey && !e.altKey && e.code === "ArrowDown") {
+      e.preventDefault();
+      stepSpeed(-1);
     }
   });
 

@@ -39,6 +39,30 @@ function formatSpeed(speed) {
   return speed.toFixed(1);
 }
 
+// 找到当前速度最接近的档位下标（SPEED_MAP 从 1 开始）
+function speedIndex(speed) {
+  let best = 3;
+  let bestDiff = Infinity;
+  for (let i = 1; i <= 10; i++) {
+    const diff = Math.abs(SPEED_MAP[i] - speed);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = i;
+    }
+  }
+  return best;
+}
+
+// 按档位加减速：dir=+1 加速，dir=-1 减速
+function stepSpeed(dir) {
+  const idx = Math.max(1, Math.min(10, speedIndex(state.speed) + dir));
+  state.speed = SPEED_MAP[idx];
+  speedValue.textContent = formatSpeed(state.speed);
+  miniSpeed.textContent = formatSpeed(state.speed);
+  sendToContent({ action: "setSpeed", speed: state.speed });
+  saveSettings();
+}
+
 // ─── DOM 元素 ───────────────────────────────────────────────
 const btnToggle   = document.getElementById("btnToggle");
 const btnIcon     = document.getElementById("btnIcon");
@@ -49,17 +73,32 @@ const speedSlider = document.getElementById("speedSlider");
 const speedValue  = document.getElementById("speedValue");
 const statusDot   = document.getElementById("statusDot");
 const statusText  = document.getElementById("statusText");
+const fullPanel    = document.getElementById("fullPanel");
+const collapsedBar = document.getElementById("collapsedBar");
+const btnCollapse  = document.getElementById("btnCollapse");
+const btnExpand    = document.getElementById("btnExpand");
+const btnMiniToggle = document.getElementById("btnMiniToggle");
+const btnSlower    = document.getElementById("btnSlower");
+const btnFaster    = document.getElementById("btnFaster");
+const miniSpeed    = document.getElementById("miniSpeed");
+const container    = document.querySelector(".container");
 
 // ─── 状态缓存 ───────────────────────────────────────────────
 let state = {
   isScrolling: false,
   speed: 0.4,       // 内部实际速度（px/帧）
   direction: "down",
-  smooth: true
+  smooth: true,
+  collapsed: false  // 面板是否收起
 };
 
 // ─── UI 更新 ────────────────────────────────────────────────
 function updateUI() {
+  // 收起/展开切换
+  container.classList.toggle("collapsed", state.collapsed);
+  fullPanel.style.display = state.collapsed ? "none" : "flex";
+  collapsedBar.style.display = state.collapsed ? "flex" : "none";
+
   // 主控按钮
   if (state.isScrolling) {
     btnToggle.classList.add("running");
@@ -68,6 +107,9 @@ function updateUI() {
     statusDot.classList.add("active");
     statusText.classList.add("active");
     statusText.textContent = state.direction === "down" ? "向下滚动中…\nScrolling down…" : "向上滚动中…\nScrolling up…";
+    // 收起模式：暂停图标
+    btnMiniToggle.classList.add("running");
+    btnMiniToggle.textContent = "⏸";
   } else {
     btnToggle.classList.remove("running");
     btnIcon.textContent = "▶";
@@ -75,6 +117,9 @@ function updateUI() {
     statusDot.classList.remove("active");
     statusText.classList.remove("active");
     statusText.textContent = "已停止\nStopped";
+    // 收起模式：播放图标
+    btnMiniToggle.classList.remove("running");
+    btnMiniToggle.textContent = "▶";
   }
 
   // 方向按钮
@@ -85,6 +130,7 @@ function updateUI() {
   const sliderVal = speedToSlider(state.speed);
   speedSlider.value = sliderVal;
   speedValue.textContent = formatSpeed(state.speed);
+  miniSpeed.textContent = formatSpeed(state.speed);
 }
 
 // ─── 与 content script 通信 ─────────────────────────────────
@@ -104,12 +150,13 @@ async function sendToContent(msg) {
 // ─── 初始化：获取当前状态 ────────────────────────────────────
 async function initState() {
   // 先从 storage 加载
-  const result = await browser.storage.local.get("scrollSettings");
+  const result = await browser.storage.local.get(["scrollSettings", "uiCollapsed"]);
   if (result.scrollSettings) {
     state.speed = result.scrollSettings.speed ?? 0.4;
     state.direction = result.scrollSettings.direction ?? "down";
     state.smooth = result.scrollSettings.smooth ?? true;
   }
+  state.collapsed = result.uiCollapsed ?? false;
 
   // 再从 content script 获取实时状态
   const live = await sendToContent({ action: "getState" });
@@ -166,6 +213,30 @@ speedSlider.addEventListener("input", (e) => {
   sendToContent({ action: "setSpeed", speed: state.speed });
   saveSettings();
 });
+
+// 收起 / 展开（记住选择，下次打开保持一致）
+function setCollapsed(collapsed) {
+  state.collapsed = collapsed;
+  updateUI();
+  browser.storage.local.set({ uiCollapsed: collapsed });
+}
+btnCollapse.addEventListener("click", () => setCollapsed(true));
+btnExpand.addEventListener("click", () => setCollapsed(false));
+
+// 收起模式：播放/暂停
+btnMiniToggle.addEventListener("click", async () => {
+  const resp = await sendToContent({ action: "toggle" });
+  if (resp) {
+    state.isScrolling = resp.isScrolling;
+  } else {
+    state.isScrolling = !state.isScrolling;
+  }
+  updateUI();
+});
+
+// 收起模式：< > 加减速
+btnSlower.addEventListener("click", () => stepSpeed(-1));
+btnFaster.addEventListener("click", () => stepSpeed(1));
 
 // 页面关闭时同步设置
 window.addEventListener("blur", saveSettings);

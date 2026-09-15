@@ -9,14 +9,22 @@
 const browser = typeof globalThis.browser !== "undefined" ? globalThis.browser : chrome;
 
 // ─── 键盘命令处理 ────────────────────────────────────────────
+// toggle-scroll → 开始/停止；speed-up / speed-down → 加速/减速
+const COMMAND_ACTIONS = {
+  "toggle-scroll": "toggle",
+  "speed-up": "speedUp",
+  "speed-down": "speedDown"
+};
+
 browser.commands.onCommand.addListener(async (command) => {
-  if (command !== "toggle-scroll") return;
+  const action = COMMAND_ACTIONS[command];
+  if (!action) return;
 
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
 
   try {
-    await browser.tabs.sendMessage(tab.id, { action: "toggle" });
+    await browser.tabs.sendMessage(tab.id, { action });
   } catch (e) {
     // content script 未加载时忽略（比如 chrome:// 页面）
   }

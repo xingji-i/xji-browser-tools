@@ -20,6 +20,14 @@
     "toggle-scroll": {
       "suggested_key": { "default": "Ctrl+Space", "mac": "MacCtrl+Space" },
       "description": "开始 / 停止自动滚动"
+    },
+    "speed-up": {
+      "suggested_key": { "default": "Ctrl+Shift+Up", "mac": "MacCtrl+Shift+Up" },
+      "description": "加速 Speed up"
+    },
+    "speed-down": {
+      "suggested_key": { "default": "Ctrl+Shift+Down", "mac": "MacCtrl+Shift+Down" },
+      "description": "减速 Slow down"
     }
   },
 
