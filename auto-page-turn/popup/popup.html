@@ -59,11 +59,27 @@
         </div>
       </div>
 
+      <!-- 小说翻页 -->
+      <div class="control-group">
+        <label class="control-label">
+          小说翻页 <small class="en">Novel Paging</small>
+          <span class="link-hint" id="nextLinkHint">检测中…</span>
+        </label>
+        <div class="direction-toggle">
+          <button class="dir-btn" id="btnTurnPage" title="点击下一页（快捷键 Ctrl+→）">⏭ 下一页 <small class="en">Next</small></button>
+          <button class="dir-btn" id="btnAutoTurn" title="滚到底自动点击下一页">🔁 自动翻页 <small class="en">Auto</small></button>
+        </div>
+      </div>
+
       <!-- 快捷键提示 -->
       <footer class="shortcuts">
         <div class="shortcut-item">
           <kbd>Ctrl+Space</kbd>
           <span>开始/停止 <small class="en">Start / Stop</small></span>
+        </div>
+        <div class="shortcut-item">
+          <kbd>Ctrl+→</kbd>
+          <span>翻到下一页 <small class="en">Next page</small></span>
         </div>
         <div class="shortcut-item">
           <kbd>Ctrl+Shift+↑</kbd>

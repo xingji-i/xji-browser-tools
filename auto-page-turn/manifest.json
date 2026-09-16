@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Auto Scroll - 自动翻页",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "自动平滑滚动网页，支持双向滚动、速度调节和键盘快捷键控制。",
 
   "permissions": ["activeTab", "storage"],
@@ -20,6 +20,10 @@
     "toggle-scroll": {
       "suggested_key": { "default": "Ctrl+Space", "mac": "MacCtrl+Space" },
       "description": "开始 / 停止自动滚动"
+    },
+    "turn-page": {
+      "suggested_key": { "default": "Ctrl+Right", "mac": "MacCtrl+Right" },
+      "description": "翻到下一页 Turn page"
     },
     "speed-up": {
       "suggested_key": { "default": "Ctrl+Shift+Up", "mac": "MacCtrl+Shift+Up" },

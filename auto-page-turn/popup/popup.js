@@ -82,6 +82,9 @@ const btnSlower    = document.getElementById("btnSlower");
 const btnFaster    = document.getElementById("btnFaster");
 const miniSpeed    = document.getElementById("miniSpeed");
 const container    = document.querySelector(".container");
+const btnTurnPage  = document.getElementById("btnTurnPage");
+const btnAutoTurn  = document.getElementById("btnAutoTurn");
+const nextLinkHint = document.getElementById("nextLinkHint");
 
 // ─── 状态缓存 ───────────────────────────────────────────────
 let state = {
@@ -90,7 +93,9 @@ let state = {
   speed: 0.4,       // 内部实际速度（px/帧）
   direction: "down",
   smooth: true,
-  collapsed: false  // 面板是否收起
+  collapsed: false, // 面板是否收起
+  autoPageTurn: false, // 小说站自动翻页模式
+  nextLinkFound: false // 当前页是否识别到"下一页"控件
 };
 
 // ─── UI 更新 ────────────────────────────────────────────────
@@ -136,6 +141,12 @@ function updateUI() {
   speedSlider.value = sliderVal;
   speedValue.textContent = formatSpeed(state.speed);
   miniSpeed.textContent = formatSpeed(state.speed);
+
+  // 小说翻页
+  btnAutoTurn.classList.toggle("active", state.autoPageTurn);
+  nextLinkHint.classList.toggle("found", state.nextLinkFound);
+  nextLinkHint.classList.toggle("miss", !state.nextLinkFound);
+  nextLinkHint.textContent = state.nextLinkFound ? "已识别下一页" : "未检测到下一页";
 }
 
 // ─── 与 content script 通信 ─────────────────────────────────
@@ -171,6 +182,8 @@ async function initState() {
     state.speed = live.speed;
     state.direction = live.direction;
     state.smooth = live.smooth;
+    state.autoPageTurn = !!live.autoPageTurn;
+    state.nextLinkFound = !!live.nextLinkFound;
   }
 
   updateUI();
@@ -243,6 +256,31 @@ btnMiniToggle.addEventListener("click", async () => {
 // 收起模式：< > 加减速
 btnSlower.addEventListener("click", () => stepSpeed(-1));
 btnFaster.addEventListener("click", () => stepSpeed(1));
+
+// 小说翻页：手动翻一页（快捷键 Ctrl+→ 同效）
+btnTurnPage.addEventListener("click", async () => {
+  const resp = await sendToContent({ action: "turnPage" });
+  if (resp && resp.turned) {
+    nextLinkHint.classList.remove("miss");
+    nextLinkHint.classList.add("found");
+    nextLinkHint.textContent = "翻页成功，加载中…";
+    // 页面即将导航/跳转，短暂延迟后关闭弹窗
+    setTimeout(() => window.close(), 400);
+  } else {
+    nextLinkHint.classList.remove("found");
+    nextLinkHint.classList.add("miss");
+    nextLinkHint.textContent = "未找到下一页按钮";
+  }
+});
+
+// 小说翻页：自动翻页模式（滚到底自动点下一页，跨章节续读）
+btnAutoTurn.addEventListener("click", async () => {
+  const target = !state.autoPageTurn;
+  const resp = await sendToContent({ action: "toggleAutoPageTurn", on: target });
+  state.autoPageTurn = resp ? !!resp.autoPageTurn : target;
+  if (state.autoPageTurn) state.isScrolling = true; // 开启时自动开始滚动
+  updateUI();
+});
 
 // 页面关闭时同步设置
 window.addEventListener("blur", saveSettings);

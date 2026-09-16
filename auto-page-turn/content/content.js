@@ -28,6 +28,12 @@
   const RESUME_DELAY = 500; // 停止交互后多少毫秒恢复自动滚动
   const RAMP_DURATION = 500; // 恢复后速度从 0 爬升到全速的时长
 
+  // ─── 自动翻页（小说站点击式翻页） ──────────────────────────
+  let autoPageTurn = false; // 自动翻页模式：滚到底后自动点击"下一页"
+  let pageTurnAt = 0;       // 计划执行翻页的时刻（毫秒时间戳），0 = 未计时
+  const PAGE_TURN_DELAY = 2000; // 滚到底后等待多少毫秒再翻页
+  const SESSION_KEY = "autoPageTurn.active"; // sessionStorage 键，跨页面续读
+
   // 速度档位（与 popup.js 的 SPEED_MAP 保持一致）
   const SPEED_STEPS = [0.1, 0.2, 0.4, 0.6, 0.8, 1.0, 1.4, 1.8, 2.4, 3.0];
 
@@ -164,9 +170,34 @@
     // scrollTo 接受浮点值，浏览器内部处理亚像素渲染
     window.scrollTo(0, idealScrollY);
 
-    // 到达页面边界自动停止
+    // 到达页面边界
     const atBottom = direction === "down" && idealScrollY >= maxScroll - 1;
     const atTop = direction === "up" && idealScrollY <= 0;
+
+    // 自动翻页：滚到底后倒计时，到点自动点击"下一页"
+    if (atBottom && autoPageTurn) {
+      if (!pageTurnAt) {
+        pageTurnAt = Date.now() + PAGE_TURN_DELAY;
+      } else if (Date.now() >= pageTurnAt) {
+        const turned = doTurnPage(false);
+        if (isScrolling && turned) {
+          // SPA 站点未发生导航时，从新页顶部继续滚动
+          animFrameId = requestAnimationFrame(scrollStep);
+        }
+        return;
+      }
+      // 显示翻页倒计时
+      const remain = Math.max(0, Math.ceil((pageTurnAt - Date.now()) / 1000));
+      if (remain !== lastCountdown) {
+        lastCountdown = remain;
+        arrowSpan.textContent = "⏭";
+        textSpan.textContent = remain > 0
+          ? `已到底 · ${remain}s 后自动翻页`
+          : "正在翻页…";
+      }
+      animFrameId = requestAnimationFrame(scrollStep);
+      return;
+    }
 
     if (atBottom || atTop) {
       stopScroll();
@@ -190,12 +221,15 @@
   function stopScroll() {
     isScrolling = false;
     userPaused = false;
+    pageTurnAt = 0;
     if (resumeTimer) {
       clearTimeout(resumeTimer);
       resumeTimer = null;
     }
     lastFrameTime = 0;
     rampStart = 0;
+    // 手动停止 = 完全停止，同时结束自动翻页续读
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* ignore */ }
     if (animFrameId) {
       cancelAnimationFrame(animFrameId);
       animFrameId = null;
@@ -227,6 +261,8 @@
       userPaused = true;
       updateIndicator();
     }
+    // 用户交互会顺延翻页倒计时（重新计时更符合直觉）
+    pageTurnAt = 0;
     // 交互持续期间不断刷新倒计时
     scheduleResume();
   }
@@ -255,6 +291,110 @@
     isScrolling ? stopScroll() : startScroll();
   }
 
+  // ─── 下一页链接智能识别（启发式评分） ──────────────────────
+  // 适用小说/漫画/长文分页站：识别"下一页/下一章/next/»"等控件
+  const NEXT_TEXT_RE = /(下一页|下页|下一章|下章|下一节|后一页|next\s*page|^next$|^»$|^›$|»»|>>|❯)/i;
+  const PREV_TEXT_RE = /(上一页|上页|上一章|上章|上一节|前一页|prev|previous|<<|«|‹|返回|目录|首页|末页|尾页)/i;
+  const NEXT_ATTR_RE = /(^|[-_\d])(next|nextpage|pb_next|btnnext|linknext|gnext)([-_]|$)/i;
+  const PREV_ATTR_RE = /(^|[-_\d])(prev|previous|pb_prev|btnprev|linkprev|gprev)([-_]|$)/i;
+
+  function findNextLink() {
+    let best = null;
+    let bestScore = 0;
+
+    const candidates = document.querySelectorAll(
+      'a[rel="next"], a, button, [role="button"], [onclick], input[type="button"], input[type="submit"]'
+    );
+
+    for (const el of candidates) {
+      const text = (el.textContent || el.value || "").trim();
+      const aria = el.getAttribute("aria-label") || "";
+      const title = el.getAttribute("title") || "";
+      const attrs = `${el.id || ""} ${typeof el.className === "string" ? el.className : ""} ${el.getAttribute("name") || ""}`;
+
+      // 排除"上一页"等反向控件
+      if (PREV_TEXT_RE.test(text) || PREV_TEXT_RE.test(aria) || PREV_TEXT_RE.test(title) || PREV_ATTR_RE.test(attrs)) {
+        continue;
+      }
+      // 文本过长的链接通常是正文/目录，不是翻页按钮（除非属性强匹配）
+      const textMatch = NEXT_TEXT_RE.test(text) || NEXT_TEXT_RE.test(aria) || NEXT_TEXT_RE.test(title);
+      const attrMatch = NEXT_ATTR_RE.test(attrs);
+      if (text.length > 30 && !attrMatch && !aria) continue;
+
+      let score = 0;
+      if (el.matches && el.matches('a[rel="next"]')) {
+        score = 100; // 语义标记，最高优先
+      } else if (textMatch) {
+        score = 90;
+      } else if (attrMatch) {
+        score = 60;
+      }
+      if (!score) continue;
+
+      // href 指向当前页面的链接降权（可能是占位/禁用态）
+      if (el.tagName === "A" && el.getAttribute("href")) {
+        try {
+          if (el.href === location.href) score -= 40;
+        } catch (e) { /* ignore */ }
+      }
+
+      // 可见性：不可见的降权；位于页面下半部（翻页控件常见位置）加分
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) score -= 30;
+      if (rect.top > window.innerHeight * 0.5) score += 10;
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = el;
+      }
+    }
+
+    return bestScore >= 30 ? best : null;
+  }
+
+  // ─── 执行翻页：点击下一页控件 ──────────────────────────────
+  function doTurnPage(manual) {
+    const link = findNextLink();
+    if (!link) {
+      if (manual) return false;
+      // 自动模式找不到下一页：停止一切并提示
+      setAutoPageTurn(false);
+      stopScroll();
+      indicator.style.display = "flex";
+      arrowSpan.textContent = "✋";
+      textSpan.textContent = "未找到下一页链接，已停止";
+      setTimeout(() => { if (!isScrolling) updateIndicator(); }, 3000);
+      return false;
+    }
+
+    // 自动模式记录续读意图：新页面加载后自动恢复滚动+翻页
+    if (autoPageTurn) {
+      try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (e) { /* 沙箱页面忽略 */ }
+    }
+
+    link.click();
+
+    // SPA 站点可能不发生导航：回到顶部继续；真导航则本脚本随之销毁，无副作用
+    pageTurnAt = 0;
+    if (isScrolling) {
+      idealScrollY = 0;
+      lastFrameTime = 0;
+      window.scrollTo(0, 0);
+    }
+    return true;
+  }
+
+  // ─── 自动翻页模式开关 ──────────────────────────────────────
+  function setAutoPageTurn(on) {
+    autoPageTurn = !!on;
+    pageTurnAt = 0;
+    try {
+      if (autoPageTurn) sessionStorage.setItem(SESSION_KEY, "1");
+      else sessionStorage.removeItem(SESSION_KEY);
+    } catch (e) { /* 沙箱页面忽略 */ }
+    updateIndicator();
+  }
+
   function reverseDirection() {
     direction = direction === "down" ? "up" : "down";
     updateIndicator();
@@ -280,7 +420,9 @@
         arrowSpan.textContent = direction === "down" ? "↓" : "↑";
         textSpan.textContent = direction === "down" ? "向下滚动中 / Scrolling ↓" : "向上滚动中 / Scrolling ↑";
       }
-      speedSpan.textContent = `×${formatSpeed(speed)}`;
+      speedSpan.textContent = autoPageTurn
+        ? `×${formatSpeed(speed)} · ⏭自动翻页`
+        : `×${formatSpeed(speed)}`;
     } else {
       indicator.style.display = "none";
     }
@@ -317,13 +459,27 @@
         direction = msg.direction === "up" ? "up" : "down";
         updateIndicator();
         break;
+      case "turnPage": {
+        const turned = doTurnPage(true);
+        sendResponse({ turned, autoPageTurn, isScrolling });
+        return false;
+      }
+      case "toggleAutoPageTurn": {
+        const on = msg.on ?? !autoPageTurn;
+        setAutoPageTurn(on);
+        // 开启自动翻页时如果没在滚动，自动开始滚动
+        if (on && !isScrolling) startScroll();
+        break;
+      }
       case "getState":
         sendResponse({
           isScrolling,
           userPaused,
           speed,
           direction,
-          smooth
+          smooth,
+          autoPageTurn,
+          nextLinkFound: !!findNextLink()
         });
         return true; // 异步响应
       case "applySettings":
@@ -333,7 +489,7 @@
         updateIndicator();
         break;
     }
-    sendResponse({ isScrolling, speed, direction, smooth });
+    sendResponse({ isScrolling, speed, direction, smooth, autoPageTurn });
     return false;
   });
 
@@ -351,6 +507,13 @@
     if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === "Space" || e.key === " ")) {
       e.preventDefault();
       toggleScroll();
+      return;
+    }
+
+    // Ctrl+→: 翻到下一页（commands API 已注册同名命令，此处为兜底）
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && e.code === "ArrowRight") {
+      e.preventDefault();
+      doTurnPage(true);
       return;
     }
 
@@ -373,4 +536,14 @@
       smooth = s.smooth ?? true;
     }
   });
+
+  // ─── 初始化：自动翻页跨页面续读 ────────────────────────────
+  // 翻页后 content script 会随旧页面销毁，sessionStorage 在同标签页/同源导航后
+  // 仍然保留，新页面据此自动恢复"滚动 + 自动翻页"
+  try {
+    if (sessionStorage.getItem(SESSION_KEY) === "1") {
+      autoPageTurn = true;
+      startScroll();
+    }
+  } catch (e) { /* 沙箱页面忽略 */ }
 })();
