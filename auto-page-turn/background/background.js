@@ -10,8 +10,10 @@ const browser = typeof globalThis.browser !== "undefined" ? globalThis.browser :
 
 // ─── 键盘命令处理 ────────────────────────────────────────────
 // toggle-scroll → 开始/停止；speed-up / speed-down → 加速/减速
+// turn-page → 点击小说站的"下一页"按钮
 const COMMAND_ACTIONS = {
   "toggle-scroll": "toggle",
+  "turn-page": "turnPage",
   "speed-up": "speedUp",
   "speed-down": "speedDown"
 };

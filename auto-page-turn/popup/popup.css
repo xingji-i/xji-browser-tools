@@ -237,6 +237,22 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
 }
 
+/* ─── 小说翻页：识别状态提示 ─────────────── */
+.link-hint {
+  margin-left: auto;
+  font-size: 10px;
+  color: #bbb;
+  letter-spacing: 0;
+}
+
+.link-hint.found {
+  color: #5a8a5a;
+}
+
+.link-hint.miss {
+  color: #c0553e;
+}
+
 /* ─── 快捷键提示 ─────────────────────────── */
 .shortcuts {
   display: flex;
