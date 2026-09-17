@@ -95,8 +95,53 @@ let state = {
   smooth: true,
   collapsed: false, // 面板是否收起
   autoPageTurn: false, // 小说站自动翻页模式
-  nextLinkFound: false // 当前页是否识别到"下一页"控件
+  nextLinkFound: false, // 当前页是否识别到"下一页"控件
+  connected: false    // 是否成功与页面内脚本通信（未连接=脚本未注入）
 };
+
+// ─── 与页面实时同步（快捷键等非面板操作也能反映到 UI） ──────
+// 页面内脚本在每次状态变化时都会广播 stateChanged，
+// 面板收到后立刻刷新，因此用快捷键开始/暂停时按钮文案会同步变化。
+let lastLiveAt = 0; // 最近一次收到页面状态回报的时刻（用于快捷键去重）
+
+browser.runtime.onMessage.addListener((msg) => {
+  if (!msg || msg.action !== "stateChanged" || !msg.state) return;
+  lastLiveAt = Date.now();
+  applyLiveState(msg.state);
+});
+
+// 合并页面返回的实时状态并刷新 UI
+function applyLiveState(live) {
+  state.connected = true;
+  state.isScrolling = !!live.isScrolling;
+  state.userPaused = !!live.userPaused;
+  if (typeof live.speed === "number") state.speed = live.speed;
+  if (live.direction) state.direction = live.direction;
+  if (typeof live.smooth === "boolean") state.smooth = live.smooth;
+  state.autoPageTurn = !!live.autoPageTurn;
+  if ("nextLinkFound" in live) state.nextLinkFound = !!live.nextLinkFound;
+  updateUI();
+}
+
+// 主动拉取一次页面状态（广播偶发丢失时兜底）
+async function refreshState() {
+  const live = await sendToContent({ action: "getState" });
+  if (live) {
+    applyLiveState(live);
+  } else if (state.connected) {
+    state.connected = false;
+    updateUI();
+  }
+}
+
+// 定时轮询兜底：面板打开期间保持与页面状态一致（如页面自身边界停止滚动）
+const POLL_INTERVAL = 800;
+let pollTimer = null;
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(refreshState, POLL_INTERVAL);
+  window.addEventListener("unload", () => { if (pollTimer) clearInterval(pollTimer); });
+}
 
 // ─── UI 更新 ────────────────────────────────────────────────
 function updateUI() {
@@ -144,21 +189,33 @@ function updateUI() {
 
   // 小说翻页
   btnAutoTurn.classList.toggle("active", state.autoPageTurn);
-  nextLinkHint.classList.toggle("found", state.nextLinkFound);
-  nextLinkHint.classList.toggle("miss", !state.nextLinkFound);
-  nextLinkHint.textContent = state.nextLinkFound ? "已识别下一页" : "未检测到下一页";
+  if (!state.connected) {
+    nextLinkHint.classList.add("miss");
+    nextLinkHint.classList.remove("found");
+    nextLinkHint.textContent = "扩展未连接，请刷新页面";
+  } else {
+    nextLinkHint.classList.toggle("found", state.nextLinkFound);
+    nextLinkHint.classList.toggle("miss", !state.nextLinkFound);
+    nextLinkHint.textContent = state.nextLinkFound ? "已识别下一页" : "未检测到下一页";
+  }
 }
 
 // ─── 与 content script 通信 ─────────────────────────────────
+let commWarned = false; // 轮询下避免刷屏，通信失败只提示一次
+
 async function sendToContent(msg) {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return null;
 
   try {
     const response = await browser.tabs.sendMessage(tab.id, msg);
+    commWarned = false;
     return response;
   } catch (e) {
-    console.warn("无法与页面通信:", e.message);
+    if (!commWarned) {
+      console.warn("无法与页面通信:", e.message);
+      commWarned = true;
+    }
     return null;
   }
 }
@@ -176,15 +233,8 @@ async function initState() {
 
   // 再从 content script 获取实时状态
   const live = await sendToContent({ action: "getState" });
-  if (live) {
-    state.isScrolling = live.isScrolling;
-    state.userPaused = !!live.userPaused;
-    state.speed = live.speed;
-    state.direction = live.direction;
-    state.smooth = live.smooth;
-    state.autoPageTurn = !!live.autoPageTurn;
-    state.nextLinkFound = !!live.nextLinkFound;
-  }
+  if (live) applyLiveState(live);
+  state.connected = !!live;
 
   updateUI();
 }
@@ -266,6 +316,10 @@ btnTurnPage.addEventListener("click", async () => {
     nextLinkHint.textContent = "翻页成功，加载中…";
     // 页面即将导航/跳转，短暂延迟后关闭弹窗
     setTimeout(() => window.close(), 400);
+  } else if (!resp) {
+    nextLinkHint.classList.remove("found");
+    nextLinkHint.classList.add("miss");
+    nextLinkHint.textContent = "扩展未连接，请刷新页面";
   } else {
     nextLinkHint.classList.remove("found");
     nextLinkHint.classList.add("miss");
@@ -282,8 +336,48 @@ btnAutoTurn.addEventListener("click", async () => {
   updateUI();
 });
 
+// ─── 面板内快捷键 ───────────────────────────────────────────
+// 面板获得焦点时，按键可能不再传到页面，这里自行转发并同步 UI。
+// 去重策略：若页面刚回报过状态变化，说明浏览器快捷键命令已生效，直接跳过，
+// 避免"命令 + 面板"各执行一次造成双重切换。
+document.addEventListener("keydown", (e) => {
+  if (!e.ctrlKey || e.altKey || e.metaKey) return;
+  const handledByCommand = Date.now() - lastLiveAt < 250;
+
+  // Ctrl+Space：开始 / 停止
+  if (!e.shiftKey && (e.code === "Space" || e.key === " ")) {
+    e.preventDefault();
+    if (handledByCommand) return;
+    toggleFromPopup();
+    return;
+  }
+
+  // Ctrl+↑ / Ctrl+↓（以及命令用的 Ctrl+Shift+↑/↓）：加速 / 减速
+  const isUp = e.code === "ArrowUp";
+  const isDown = e.code === "ArrowDown";
+  if (isUp || isDown) {
+    // 滑块聚焦时交给滑块原生调整（其 input 事件已负责同步速度）
+    if (e.target && e.target.type === "range") return;
+    e.preventDefault();
+    if (handledByCommand) return;
+    stepSpeed(isUp ? 1 : -1);
+  }
+});
+
+// 面板内触发开关：以页面返回的结果为准刷新 UI
+async function toggleFromPopup() {
+  const resp = await sendToContent({ action: "toggle" });
+  if (resp) {
+    state.isScrolling = !!resp.isScrolling;
+    updateUI();
+  } else {
+    await refreshState();
+  }
+}
+
 // 页面关闭时同步设置
 window.addEventListener("blur", saveSettings);
 
 // ─── 启动 ───────────────────────────────────────────────────
 initState();
+startPolling();

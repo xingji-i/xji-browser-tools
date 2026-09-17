@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Auto Scroll - 自动翻页",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "自动平滑滚动网页，支持双向滚动、速度调节和键盘快捷键控制。",
 
   "permissions": ["activeTab", "storage"],

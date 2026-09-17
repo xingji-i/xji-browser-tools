@@ -10,11 +10,16 @@
 (() => {
   "use strict";
 
+  // 兼容 Chrome / Firefox 的 API 命名空间（全局声明一次，供所有函数使用）
+  const browser = typeof globalThis.browser !== "undefined" ? globalThis.browser : chrome;
+
   // ─── 状态 ───────────────────────────────────────────────────
   let isScrolling = false;
   let speed = 0.4;         // 像素/帧 (0.1~3.0)，内部会转换为 px/s
   let direction = "down";  // "up" | "down"
   let smooth = true;
+  let lastToggleAt = 0;    // 上次 toggle 的时刻，用于去重（见消息监听）
+  let lastTurnAt = 0;      // 上次手动翻页的时刻，用于去重
   let animFrameId = null;
   let idealScrollY = 0;    // 浮点理想滚动位置，消除整数步进抖动
   let lastFrameTime = 0;   // 上一帧时间戳，用于帧率无关速度计算
@@ -31,7 +36,7 @@
   // ─── 自动翻页（小说站点击式翻页） ──────────────────────────
   let autoPageTurn = false; // 自动翻页模式：滚到底后自动点击"下一页"
   let pageTurnAt = 0;       // 计划执行翻页的时刻（毫秒时间戳），0 = 未计时
-  const PAGE_TURN_DELAY = 2000; // 滚到底后等待多少毫秒再翻页
+  const PAGE_TURN_DELAY = 1000; // 滚到底后等待多少毫秒再翻页
   const SESSION_KEY = "autoPageTurn.active"; // sessionStorage 键，跨页面续读
 
   // 速度档位（与 popup.js 的 SPEED_MAP 保持一致）
@@ -50,6 +55,7 @@
     speed = SPEED_STEPS[idx];
     updateIndicator();
     browser.storage.local.set({ scrollSettings: { speed, direction, smooth } });
+    notifyStateChange();
   }
 
   // ─── 悬浮指示器 ─────────────────────────────────────────────
@@ -79,7 +85,7 @@
   });
   indicator.addEventListener("mouseenter", () => (indicator.style.opacity = "1"));
   indicator.addEventListener("mouseleave", () => (indicator.style.opacity = "0.9"));
-  indicator.addEventListener("click", () => toggleScroll());
+  indicator.addEventListener("click", () => requestToggle());
 
   const arrowSpan = document.createElement("span");
   arrowSpan.style.fontSize = "14px";
@@ -216,6 +222,7 @@
     lastFrameTime = 0;              // 首帧会初始化时间戳
     animFrameId = requestAnimationFrame(scrollStep);
     updateIndicator();
+    notifyStateChange();
   }
 
   function stopScroll() {
@@ -235,6 +242,7 @@
       animFrameId = null;
     }
     updateIndicator();
+    notifyStateChange();
   }
 
   // ─── 用户交互让位：检测到手动滚动时暂停，停手后自动恢复 ───
@@ -251,6 +259,7 @@
         lastFrameTime = 0;
         rampStart = performance.now();
         updateIndicator();
+        notifyStateChange();
       }
     }, RESUME_DELAY);
   }
@@ -260,6 +269,8 @@
     if (!userPaused) {
       userPaused = true;
       updateIndicator();
+      // 让位状态同步给 popup（面板会显示"手动滚动中，已暂停"）
+      notifyStateChange();
     }
     // 用户交互会顺延翻页倒计时（重新计时更符合直觉）
     pageTurnAt = 0;
@@ -291,6 +302,15 @@
     isScrolling ? stopScroll() : startScroll();
   }
 
+  // 统一的开/关入口（带去重）：
+  // 同一次按键可能被浏览器快捷键命令、页面按键监听、面板按键监听重复捕获，
+  // 150ms 内的重复触发视为同一操作，避免"刚开启又立刻停止"。
+  function requestToggle() {
+    if (Date.now() - lastToggleAt < 150) return;
+    lastToggleAt = Date.now();
+    toggleScroll();
+  }
+
   // ─── 下一页链接智能识别（启发式评分） ──────────────────────
   // 适用小说/漫画/长文分页站：识别"下一页/下一章/next/»"等控件
   const NEXT_TEXT_RE = /(下一页|下页|下一章|下章|下一节|后一页|next\s*page|^next$|^»$|^›$|»»|>>|❯)/i;
@@ -302,14 +322,17 @@
     let best = null;
     let bestScore = 0;
 
+    // 文本归一化：去除空白符和零宽字符（不同浏览器渲染/编码差异可能导致匹配失败）
+    const clean = (s) => (s || "").replace(/[\s\u200b\u200c\u200d\ufeff]/g, "");
+
     const candidates = document.querySelectorAll(
       'a[rel="next"], a, button, [role="button"], [onclick], input[type="button"], input[type="submit"]'
     );
 
     for (const el of candidates) {
-      const text = (el.textContent || el.value || "").trim();
-      const aria = el.getAttribute("aria-label") || "";
-      const title = el.getAttribute("title") || "";
+      const text = clean(el.textContent || el.value);
+      const aria = clean(el.getAttribute("aria-label"));
+      const title = clean(el.getAttribute("title"));
       const attrs = `${el.id || ""} ${typeof el.className === "string" ? el.className : ""} ${el.getAttribute("name") || ""}`;
 
       // 排除"上一页"等反向控件
@@ -349,7 +372,26 @@
       }
     }
 
-    return bestScore >= 30 ? best : null;
+    if (bestScore >= 30) return best;
+
+    // 兜底：<link rel="next">（不可点击，但在 doTurnPage 中会转为地址跳转）
+    const linkEl = document.querySelector('link[rel="next"]');
+    if (linkEl && linkEl.href) return linkEl;
+
+    // 诊断：识别失败时输出疑似候选，便于排查特定站点
+    try {
+      const sample = [];
+      for (const el of document.querySelectorAll("a, button")) {
+        const t = clean(el.textContent).slice(0, 12);
+        if (t && t.length <= 10 && /页|章|next|»|›/i.test(t)) {
+          sample.push(`${t}${el.id ? "#" + el.id : ""}${typeof el.className === "string" && el.className ? "." + el.className.split(/\s+/).join(".") : ""}`);
+        }
+        if (sample.length >= 20) break;
+      }
+      console.debug("[AutoScroll] 未识别到下一页控件，疑似候选：", sample);
+    } catch (e) { /* ignore */ }
+
+    return null;
   }
 
   // ─── 执行翻页：点击下一页控件 ──────────────────────────────
@@ -372,7 +414,14 @@
       try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (e) { /* 沙箱页面忽略 */ }
     }
 
+    // <link rel="next"> 不可点击，直接地址跳转
+    if (link.tagName === "LINK") {
+      location.assign(link.href);
+      return true;
+    }
+
     link.click();
+    notifyStateChange();
 
     // SPA 站点可能不发生导航：回到顶部继续；真导航则本脚本随之销毁，无副作用
     pageTurnAt = 0;
@@ -384,6 +433,14 @@
     return true;
   }
 
+  // 统一的手动翻页入口（带去重）：
+  // 快捷键命令与页面按键监听可能重复触发，300ms 内只翻一次，避免连跳两章。
+  function requestTurnPage() {
+    if (Date.now() - lastTurnAt < 300) return false;
+    lastTurnAt = Date.now();
+    return doTurnPage(true);
+  }
+
   // ─── 自动翻页模式开关 ──────────────────────────────────────
   function setAutoPageTurn(on) {
     autoPageTurn = !!on;
@@ -393,13 +450,14 @@
       else sessionStorage.removeItem(SESSION_KEY);
     } catch (e) { /* 沙箱页面忽略 */ }
     updateIndicator();
+    notifyStateChange();
   }
 
   function reverseDirection() {
     direction = direction === "down" ? "up" : "down";
     updateIndicator();
-    const browser = typeof globalThis.browser !== "undefined" ? globalThis.browser : chrome;
     browser.storage.local.set({ scrollSettings: { speed, direction, smooth } });
+    notifyStateChange();
   }
 
   // ─── 格式化速度显示 ────────────────────────────────────────
@@ -428,13 +486,31 @@
     }
   }
 
-  // ─── 消息监听 ───────────────────────────────────────────────
-  const browser = typeof globalThis.browser !== "undefined" ? globalThis.browser : chrome;
+  // ─── 状态快照 & 变化广播 ───────────────────────────────────
+  // snapshot: 统一的状态快照，供 getState（应答）与 stateChanged（广播）复用
+  // includeNext: 是否顺带计算"下一页"识别结果（要遍历页面元素，轮询广播时省略）
+  function snapshot(includeNext) {
+    const s = { isScrolling, userPaused, speed, direction, smooth, autoPageTurn };
+    if (includeNext) s.nextLinkFound = !!findNextLink();
+    return s;
+  }
 
+  // 状态变化时主动广播给扩展（popup 面板）：
+  // 快捷键、页面指示器点击等"非面板触发"的切换也能让面板立刻同步，
+  // 不必等面板重新打开或轮询。
+  function notifyStateChange() {
+    try {
+      const p = browser.runtime.sendMessage({ action: "stateChanged", state: snapshot(false) });
+      // popup 未打开时没有接收端，静默忽略
+      if (p && typeof p.catch === "function") p.catch(() => { /* 无接收端 */ });
+    } catch (e) { /* ignore */ }
+  }
+
+  // ─── 消息监听 ───────────────────────────────────────────────
   browser.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     switch (msg.action) {
       case "toggle":
-        toggleScroll();
+        requestToggle();
         break;
       case "start":
         startScroll();
@@ -448,6 +524,7 @@
       case "setSpeed":
         speed = Math.max(0.1, Math.min(3.0, Number(msg.speed) || 0.4));
         updateIndicator();
+        notifyStateChange();
         break;
       case "speedUp":
         stepSpeed(1);
@@ -458,9 +535,10 @@
       case "setDirection":
         direction = msg.direction === "up" ? "up" : "down";
         updateIndicator();
+        notifyStateChange();
         break;
       case "turnPage": {
-        const turned = doTurnPage(true);
+        const turned = requestTurnPage();
         sendResponse({ turned, autoPageTurn, isScrolling });
         return false;
       }
@@ -472,15 +550,7 @@
         break;
       }
       case "getState":
-        sendResponse({
-          isScrolling,
-          userPaused,
-          speed,
-          direction,
-          smooth,
-          autoPageTurn,
-          nextLinkFound: !!findNextLink()
-        });
+        sendResponse(snapshot(true));
         return true; // 异步响应
       case "applySettings":
         speed = msg.speed ?? speed;
@@ -489,7 +559,7 @@
         updateIndicator();
         break;
     }
-    sendResponse({ isScrolling, speed, direction, smooth, autoPageTurn });
+    sendResponse(snapshot(false));
     return false;
   });
 
@@ -506,14 +576,14 @@
     // Ctrl+Space: 开/关自动滚动
     if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === "Space" || e.key === " ")) {
       e.preventDefault();
-      toggleScroll();
+      requestToggle();
       return;
     }
 
     // Ctrl+→: 翻到下一页（commands API 已注册同名命令，此处为兜底）
     if (e.ctrlKey && !e.shiftKey && !e.altKey && e.code === "ArrowRight") {
       e.preventDefault();
-      doTurnPage(true);
+      requestTurnPage();
       return;
     }
 
